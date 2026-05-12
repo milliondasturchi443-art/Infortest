@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, school, region, grade } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Ismingizni kiriting.' });
@@ -30,21 +30,12 @@ router.post('/register', async (req, res) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
+      school: school || '',
+      region: region || '',
+      grade: grade || '',
     });
 
-    const results = {};
-    if (user.results) {
-      user.results.forEach((val, key) => {
-        results[key] = val;
-      });
-    }
-
-    res.status(201).json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      results,
-    });
+    res.status(201).json(user.toPublic());
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Server xatosi.' });
@@ -69,21 +60,22 @@ router.post('/login', async (req, res) => {
         .json({ error: "Email yoki parol noto'g'ri." });
     }
 
-    const results = {};
-    if (user.results) {
-      user.results.forEach((val, key) => {
-        results[key] = val;
-      });
-    }
-
-    res.json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      results,
-    });
+    res.json(user.toPublic());
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.get('/profile/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
+    }
+    res.json(user.toPublic());
+  } catch (err) {
+    console.error('Profile error:', err);
     res.status(500).json({ error: 'Server xatosi.' });
   }
 });

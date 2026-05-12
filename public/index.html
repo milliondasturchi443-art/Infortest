@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Informatika Testi — 5-10 Sinflar</title>
+<title>InforTest — Informatika bo'yicha onlayn test tizimi</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -20,6 +21,11 @@
       <div class="feat"><div class="feat-icon">🏫</div><div class="feat-lbl">5–10 sinflar</div></div>
       <div class="feat"><div class="feat-icon">📝</div><div class="feat-lbl">20 savol / test</div></div>
       <div class="feat"><div class="feat-icon">🏆</div><div class="feat-lbl">Sertifikat 70%+</div></div>
+    </div>
+    <div class="feat-row">
+      <div class="feat"><div class="feat-icon">📊</div><div class="feat-lbl">Statistika</div></div>
+      <div class="feat"><div class="feat-icon">🏅</div><div class="feat-lbl">Reyting</div></div>
+      <div class="feat"><div class="feat-icon">📱</div><div class="feat-lbl">Mobil qulay</div></div>
     </div>
     <button class="btn btn-primary" onclick="showScreen('loginScreen')">Kirish →</button>
     <button class="btn btn-outline" onclick="showScreen('registerScreen')">Ro'yxatdan o'tish</button>
@@ -38,6 +44,38 @@
     <div class="field"><label>Ism va familiya</label><input type="text" id="regName" placeholder="Masalan: Jasur Karimov" autocomplete="off"></div>
     <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="sizning@email.uz" autocomplete="off"></div>
     <div class="field"><label>Parol</label><input type="password" id="regPass" placeholder="Kamida 6 ta belgi"></div>
+    <div class="field"><label>Maktab</label><input type="text" id="regSchool" placeholder="Masalan: 6-maktab" autocomplete="off"></div>
+    <div class="field"><label>Viloyat / Tuman</label>
+      <select id="regRegion">
+        <option value="">Tanlang...</option>
+        <option value="Toshkent shahri">Toshkent shahri</option>
+        <option value="Toshkent viloyati">Toshkent viloyati</option>
+        <option value="Andijon">Andijon</option>
+        <option value="Buxoro">Buxoro</option>
+        <option value="Farg'ona">Farg'ona</option>
+        <option value="Jizzax">Jizzax</option>
+        <option value="Xorazm">Xorazm</option>
+        <option value="Namangan">Namangan</option>
+        <option value="Navoiy">Navoiy</option>
+        <option value="Qashqadaryo">Qashqadaryo</option>
+        <option value="Samarqand">Samarqand</option>
+        <option value="Sirdaryo">Sirdaryo</option>
+        <option value="Surxondaryo">Surxondaryo</option>
+        <option value="Qoraqalpog'iston">Qoraqalpog'iston</option>
+      </select>
+    </div>
+    <div class="field"><label>Sinf</label>
+      <select id="regGrade">
+        <option value="">Tanlang...</option>
+        <option value="5-sinf">5-sinf</option>
+        <option value="6-sinf">6-sinf</option>
+        <option value="7-sinf">7-sinf</option>
+        <option value="8-sinf">8-sinf</option>
+        <option value="9-sinf">9-sinf</option>
+        <option value="10-sinf">10-sinf</option>
+        <option value="11-sinf">11-sinf</option>
+      </select>
+    </div>
     <button class="btn btn-primary" onclick="register()">Ro'yxatdan o'tish →</button>
     <div class="switch-text">Akkauntingiz bormi? <a onclick="showScreen('loginScreen')">Kirish</a></div>
     <button class="btn btn-outline" onclick="showScreen('welcomeScreen')">← Orqaga</button>
@@ -61,19 +99,110 @@
   </div>
 </div>
 
-<!-- 4 SINF TANLASH -->
-<div id="sinfScreen" class="screen">
+<!-- 4 DASHBOARD (after login) -->
+<div id="dashboardScreen" class="screen">
   <div class="card">
     <div class="logo-mark">InforTest</div>
     <br>
-    <h2 id="sinfGreet">Salom!</h2>
-    <p class="subtitle">Sinfingizni tanlang</p>
-    <div class="sinf-grid" id="sinfGrid"></div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="showDashTab('subjects')">📚 Fanlar</div>
+      <div class="nav-tab" onclick="showDashTab('stats')">📊 Statistika</div>
+      <div class="nav-tab" onclick="showDashTab('leaderboard')">🏅 Reyting</div>
+      <div class="nav-tab" onclick="showDashTab('profile')">👤 Profil</div>
+      <div class="nav-tab" id="adminTab" style="display:none" onclick="showDashTab('admin')">⚙️ Admin</div>
+    </div>
+
+    <!-- SUBJECTS TAB -->
+    <div id="tab-subjects" class="dash-tab">
+      <h2 id="dashGreet">Salom!</h2>
+      <p class="subtitle">Fanni tanlang</p>
+      <div class="subject-grid">
+        <div class="subject-card" onclick="selectSubject('informatika')">
+          <div class="subj-icon">💻</div>
+          <div class="subj-name">Informatika</div>
+          <div class="subj-desc">5-10 sinf, 24 ta test</div>
+        </div>
+        <div class="subject-card disabled">
+          <div class="subj-icon">📐</div>
+          <div class="subj-name">Matematika</div>
+          <div class="subj-desc">Tez kunda...</div>
+        </div>
+        <div class="subject-card disabled">
+          <div class="subj-icon">🔬</div>
+          <div class="subj-name">Fizika</div>
+          <div class="subj-desc">Tez kunda...</div>
+        </div>
+        <div class="subject-card disabled">
+          <div class="subj-icon">🧪</div>
+          <div class="subj-name">Kimyo</div>
+          <div class="subj-desc">Tez kunda...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="dash-tab" style="display:none">
+      <h2>📊 Mening statistikam</h2>
+      <p class="subtitle">Sizning test natijalangiz</p>
+      <div class="stats-grid" id="myStatsGrid">
+        <div class="stat-box"><span class="val" id="myTests">0</span><span class="lbl">Testlar</span></div>
+        <div class="stat-box"><span class="val" id="myCorrect">0</span><span class="lbl">To'g'ri</span></div>
+        <div class="stat-box"><span class="val" id="myAvg">0%</span><span class="lbl">O'rtacha</span></div>
+      </div>
+      <div id="myResultsList"></div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div id="tab-leaderboard" class="dash-tab" style="display:none">
+      <h2>🏅 Eng yaxshi natijalar</h2>
+      <p class="subtitle">Barcha foydalanuvchilar reytingi</p>
+      <div id="leaderboardContent"></div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" class="dash-tab" style="display:none">
+      <div class="profile-avatar" id="profileAvatar">?</div>
+      <div class="profile-info">
+        <div class="name" id="profileName">—</div>
+        <div class="detail" id="profileEmail">—</div>
+        <div class="detail" id="profileSchool">—</div>
+        <div class="detail" id="profileRegion">—</div>
+        <div class="detail" id="profileGrade">—</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><span class="val" id="profTests">0</span><span class="lbl">Testlar</span></div>
+        <div class="stat-box"><span class="val" id="profCorrect">0</span><span class="lbl">To'g'ri</span></div>
+        <div class="stat-box"><span class="val" id="profAvg">0%</span><span class="lbl">O'rtacha</span></div>
+      </div>
+    </div>
+
+    <!-- ADMIN TAB -->
+    <div id="tab-admin" class="dash-tab" style="display:none">
+      <h2>⚙️ Admin panel</h2>
+      <p class="subtitle">Tizim boshqaruvi</p>
+      <div id="adminDashboard"></div>
+      <hr class="divider">
+      <h2 style="font-size:1rem;margin-bottom:12px">Foydalanuvchilar</h2>
+      <div id="adminUsersList"></div>
+    </div>
+
     <button class="btn btn-outline" onclick="logout()">← Chiqish</button>
   </div>
 </div>
 
-<!-- 5 NAZORAT ISHI TANLASH -->
+<!-- 5 SINF TANLASH -->
+<div id="sinfScreen" class="screen">
+  <div class="card">
+    <div class="logo-mark">InforTest</div>
+    <br>
+    <h2 id="sinfGreet">Sinfingizni tanlang</h2>
+    <p class="subtitle">Sinfingizni tanlang</p>
+    <div class="sinf-grid" id="sinfGrid"></div>
+    <button class="btn btn-outline" onclick="showScreen('dashboardScreen')">← Orqaga</button>
+  </div>
+</div>
+
+<!-- 6 NAZORAT ISHI TANLASH -->
 <div id="nazScreen" class="screen">
   <div class="card">
     <div class="breadcrumb"><span id="bc1"></span><span class="sep">›</span>Nazorat ishi</div>
@@ -85,7 +214,7 @@
   </div>
 </div>
 
-<!-- 6 INTRO -->
+<!-- 7 INTRO -->
 <div id="introScreen" class="screen">
   <div class="card" style="text-align:center">
     <div style="font-size:3rem;margin-bottom:14px">🧠</div>
@@ -97,7 +226,7 @@
   </div>
 </div>
 
-<!-- 7 QUIZ -->
+<!-- 8 QUIZ -->
 <div id="quizScreen" class="screen">
   <div class="card">
     <div class="quiz-meta">
@@ -111,7 +240,7 @@
   </div>
 </div>
 
-<!-- 8 RESULT -->
+<!-- 9 RESULT -->
 <div id="resultScreen" class="screen">
   <div class="card">
     <div id="resultRing" class="result-ring pass">
@@ -136,11 +265,21 @@
     <hr class="divider">
     <button class="btn btn-green" onclick="goToNaz()">Yana bir test topshirish</button>
     <button class="btn btn-accent" onclick="showScreen('sinfScreen')">Boshqa sinfni tanlash</button>
-    <button class="btn btn-outline" onclick="logout()">← Chiqish</button>
+    <button class="btn btn-outline" onclick="showScreen('dashboardScreen')">← Bosh sahifa</button>
   </div>
 </div>
 
 </div><!-- /page -->
+
+<!-- FOOTER -->
+<div class="site-footer">
+  <div class="footer-brand">InforTest</div>
+  <div>Informatika bo'yicha onlayn test tizimi</div>
+  <div class="footer-loc">📍 O'zbekiston, Namangan viloyati, Chortoq tumani, 6-maktab</div>
+  <div class="footer-loc">3RJM+PH3, Chortoq, Namangan viloyati</div>
+  <div style="margin-top:8px">© 2024-2026 InforTest. Barcha huquqlar himoyalangan.</div>
+</div>
+
 <canvas id="certCanvas"></canvas>
 
 <script src="/js/app.js"></script>

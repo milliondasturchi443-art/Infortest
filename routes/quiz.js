@@ -55,6 +55,9 @@ router.post('/submit', async (req, res) => {
     }
 
     user.results.set(key, pct);
+    user.totalTests += 1;
+    user.totalCorrect += score;
+    user.totalQuestions += total;
     await user.save();
 
     res.json({ score, total, pct, key });
@@ -78,9 +81,78 @@ router.get('/results/:userId', async (req, res) => {
       });
     }
 
-    res.json({ results });
+    res.json({
+      results,
+      totalTests: user.totalTests,
+      totalCorrect: user.totalCorrect,
+      totalQuestions: user.totalQuestions,
+    });
   } catch (err) {
     console.error('Results error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const users = await User.find({ totalTests: { $gt: 0 } })
+      .sort({ totalCorrect: -1 })
+      .limit(50)
+      .select('name school region grade totalTests totalCorrect totalQuestions');
+
+    const leaderboard = users.map((u, i) => ({
+      rank: i + 1,
+      name: u.name,
+      school: u.school,
+      region: u.region,
+      grade: u.grade,
+      totalTests: u.totalTests,
+      totalCorrect: u.totalCorrect,
+      totalQuestions: u.totalQuestions,
+      avgPct:
+        u.totalQuestions > 0
+          ? Math.round((u.totalCorrect / u.totalQuestions) * 100)
+          : 0,
+    }));
+
+    res.json(leaderboard);
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.get('/stats', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ totalTests: { $gt: 0 } });
+    const allUsers = await User.find({ totalTests: { $gt: 0 } }).select(
+      'totalTests totalCorrect totalQuestions'
+    );
+
+    let totalTestsTaken = 0;
+    let totalCorrectAll = 0;
+    let totalQuestionsAll = 0;
+
+    allUsers.forEach((u) => {
+      totalTestsTaken += u.totalTests;
+      totalCorrectAll += u.totalCorrect;
+      totalQuestionsAll += u.totalQuestions;
+    });
+
+    res.json({
+      totalUsers,
+      activeUsers,
+      totalTestsTaken,
+      totalCorrectAll,
+      totalQuestionsAll,
+      avgPct:
+        totalQuestionsAll > 0
+          ? Math.round((totalCorrectAll / totalQuestionsAll) * 100)
+          : 0,
+    });
+  } catch (err) {
+    console.error('Stats error:', err);
     res.status(500).json({ error: 'Server xatosi.' });
   }
 });
