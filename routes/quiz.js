@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const DB = require('../data/questions');
+const { checkAchievements } = require('./auth');
 
 const router = express.Router();
 
@@ -58,6 +59,17 @@ router.post('/submit', async (req, res) => {
     user.totalTests += 1;
     user.totalCorrect += score;
     user.totalQuestions += total;
+    user.testHistory.push({
+      sinf,
+      testIdx,
+      testTitle: test.title,
+      topic: test.topic,
+      score,
+      total,
+      pct,
+      date: new Date(),
+    });
+    checkAchievements(user);
     await user.save();
 
     res.json({ score, total, pct, key });

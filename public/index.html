@@ -107,8 +107,11 @@
     <div class="nav-tabs">
       <div class="nav-tab active" onclick="showDashTab('subjects')">📚 Fanlar</div>
       <div class="nav-tab" onclick="showDashTab('stats')">📊 Statistika</div>
+      <div class="nav-tab" onclick="showDashTab('history')">📋 Tarix</div>
       <div class="nav-tab" onclick="showDashTab('leaderboard')">🏅 Reyting</div>
       <div class="nav-tab" onclick="showDashTab('profile')">👤 Profil</div>
+      <div class="nav-tab" onclick="showDashTab('settings')">🎨 Sozlamalar</div>
+      <div class="nav-tab" onclick="showDashTab('achievements')">🏆 Yutuqlar</div>
       <div class="nav-tab" id="adminTab" style="display:none" onclick="showDashTab('admin')">⚙️ Admin</div>
     </div>
 
@@ -159,6 +162,13 @@
       <div id="leaderboardContent"></div>
     </div>
 
+    <!-- HISTORY TAB -->
+    <div id="tab-history" class="dash-tab" style="display:none">
+      <h2>📋 Test tarixi</h2>
+      <p class="subtitle">Barcha topshirgan testlaringiz</p>
+      <div id="historyList"></div>
+    </div>
+
     <!-- PROFILE TAB -->
     <div id="tab-profile" class="dash-tab" style="display:none">
       <div class="profile-avatar" id="profileAvatar">?</div>
@@ -168,12 +178,97 @@
         <div class="detail" id="profileSchool">—</div>
         <div class="detail" id="profileRegion">—</div>
         <div class="detail" id="profileGrade">—</div>
+        <div class="detail" id="profileJoined">—</div>
       </div>
       <div class="stats-grid">
         <div class="stat-box"><span class="val" id="profTests">0</span><span class="lbl">Testlar</span></div>
         <div class="stat-box"><span class="val" id="profCorrect">0</span><span class="lbl">To'g'ri</span></div>
         <div class="stat-box"><span class="val" id="profAvg">0%</span><span class="lbl">O'rtacha</span></div>
       </div>
+      <hr class="divider">
+      <button class="btn btn-primary" style="margin-top:0" onclick="toggleEditProfile()">✏️ Profilni tahrirlash</button>
+      <div id="editProfileForm" style="display:none" class="edit-form">
+        <div id="editMsg" class="success-msg"></div>
+        <div id="editErr" class="err"></div>
+        <div class="field"><label>Ism</label><input type="text" id="editName"></div>
+        <div class="field"><label>Maktab</label><input type="text" id="editSchool"></div>
+        <div class="field"><label>Viloyat / Tuman</label>
+          <select id="editRegion">
+            <option value="">Tanlang...</option>
+            <option value="Toshkent shahri">Toshkent shahri</option>
+            <option value="Toshkent viloyati">Toshkent viloyati</option>
+            <option value="Andijon">Andijon</option>
+            <option value="Buxoro">Buxoro</option>
+            <option value="Farg'ona">Farg'ona</option>
+            <option value="Jizzax">Jizzax</option>
+            <option value="Xorazm">Xorazm</option>
+            <option value="Namangan">Namangan</option>
+            <option value="Navoiy">Navoiy</option>
+            <option value="Qashqadaryo">Qashqadaryo</option>
+            <option value="Samarqand">Samarqand</option>
+            <option value="Sirdaryo">Sirdaryo</option>
+            <option value="Surxondaryo">Surxondaryo</option>
+            <option value="Qoraqalpog'iston">Qoraqalpog'iston</option>
+          </select>
+        </div>
+        <div class="field"><label>Sinf</label>
+          <select id="editGrade">
+            <option value="">Tanlang...</option>
+            <option value="5-sinf">5-sinf</option>
+            <option value="6-sinf">6-sinf</option>
+            <option value="7-sinf">7-sinf</option>
+            <option value="8-sinf">8-sinf</option>
+            <option value="9-sinf">9-sinf</option>
+            <option value="10-sinf">10-sinf</option>
+            <option value="11-sinf">11-sinf</option>
+          </select>
+        </div>
+        <button class="btn btn-green btn-sm" style="margin-top:0" onclick="saveProfile()">💾 Saqlash</button>
+      </div>
+      <hr class="divider">
+      <button class="btn btn-outline" onclick="toggleChangePassword()">🔒 Parolni o'zgartirish</button>
+      <div id="changePasswordForm" style="display:none" class="edit-form">
+        <div id="passMsg" class="success-msg"></div>
+        <div id="passErr" class="err"></div>
+        <div class="field"><label>Joriy parol</label><input type="password" id="curPass" placeholder="Hozirgi parolingiz"></div>
+        <div class="field"><label>Yangi parol</label><input type="password" id="newPass" placeholder="Kamida 6 ta belgi"></div>
+        <button class="btn btn-primary btn-sm" style="margin-top:0" onclick="changePassword()">Parolni o'zgartirish</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="dash-tab" style="display:none">
+      <h2>🎨 Sozlamalar</h2>
+      <p class="subtitle">Ilovani o'zingizga moslang</p>
+
+      <div class="settings-section">
+        <h3>🌙 Tema</h3>
+        <div class="settings-row">
+          <div class="settings-label">Qorong'u tema<small>Ko'zlaringizni asrang</small></div>
+          <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()"></button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🎨 Asosiy rang</h3>
+        <div class="color-picker-row" id="colorPicker"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🔤 Shrift hajmi</h3>
+        <div class="font-size-row">
+          <button class="font-size-btn" onclick="setFontSize('small')">Kichik</button>
+          <button class="font-size-btn" onclick="setFontSize('medium')">O'rta</button>
+          <button class="font-size-btn" onclick="setFontSize('large')">Katta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS TAB -->
+    <div id="tab-achievements" class="dash-tab" style="display:none">
+      <h2>🏆 Yutuqlar</h2>
+      <p class="subtitle">Siz erishgan natijalar</p>
+      <div class="ach-grid" id="achGrid"></div>
     </div>
 
     <!-- ADMIN TAB -->

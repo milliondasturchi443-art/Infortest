@@ -1,6 +1,20 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const testHistorySchema = new mongoose.Schema(
+  {
+    sinf: String,
+    testIdx: Number,
+    testTitle: String,
+    topic: String,
+    score: Number,
+    total: Number,
+    pct: Number,
+    date: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -17,9 +31,14 @@ const userSchema = new mongoose.Schema(
     grade: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     results: { type: Map, of: Number, default: {} },
+    testHistory: { type: [testHistorySchema], default: [] },
     totalTests: { type: Number, default: 0 },
     totalCorrect: { type: Number, default: 0 },
     totalQuestions: { type: Number, default: 0 },
+    theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+    accentColor: { type: String, default: '#4361ee' },
+    fontSize: { type: String, enum: ['small', 'medium', 'large'], default: 'medium' },
+    achievements: { type: [String], default: [] },
   },
   { timestamps: true }
 );
@@ -50,9 +69,15 @@ userSchema.methods.toPublic = function () {
     grade: this.grade,
     role: this.role,
     results,
+    testHistory: this.testHistory || [],
     totalTests: this.totalTests,
     totalCorrect: this.totalCorrect,
     totalQuestions: this.totalQuestions,
+    theme: this.theme,
+    accentColor: this.accentColor,
+    fontSize: this.fontSize,
+    achievements: this.achievements || [],
+    createdAt: this.createdAt,
   };
 };
 

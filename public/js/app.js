@@ -10,6 +10,29 @@ var score = 0;
 var answered = false;
 var userAnswers = [];
 
+var ACCENT_COLORS = [
+  { name: 'Ko\'k', value: '#4361ee' },
+  { name: 'Binafsha', value: '#7209b7' },
+  { name: 'Pushti', value: '#f72585' },
+  { name: 'Yashil', value: '#06d6a0' },
+  { name: 'To\'q sariq', value: '#f8961e' },
+  { name: 'Qizil', value: '#ef233c' },
+  { name: 'Ko\'k-yashil', value: '#00b4d8' },
+  { name: 'Qovoq', value: '#e76f51' },
+];
+
+var ALL_ACHIEVEMENTS = [
+  { id: 'first_test', icon: '🎯', name: 'Birinchi qadam', desc: 'Birinchi testni topshirish' },
+  { id: 'test_5', icon: '📝', name: 'Faol o\'quvchi', desc: '5 ta test topshirish' },
+  { id: 'test_10', icon: '🔥', name: 'Yonib turuvchi', desc: '10 ta test topshirish' },
+  { id: 'test_25', icon: '💪', name: 'Chidamli', desc: '25 ta test topshirish' },
+  { id: 'pass_5', icon: '⭐', name: 'Yulduz', desc: '5 ta testdan o\'tish (70%+)' },
+  { id: 'pass_10', icon: '🌟', name: 'Super yulduz', desc: '10 ta testdan o\'tish (70%+)' },
+  { id: 'genius', icon: '🧠', name: 'Daho', desc: 'O\'rtacha 90%+ natija' },
+  { id: 'perfect', icon: '👑', name: 'Mukammal', desc: '100% natija olish' },
+  { id: 'master', icon: '🏅', name: 'Usta', desc: 'Barcha 24 testdan o\'tish' },
+];
+
 (async function init() {
   try {
     var res = await fetch(API + '/api/quiz/questions');
@@ -17,7 +40,20 @@ var userAnswers = [];
   } catch (err) {
     console.error('Failed to load questions:', err);
   }
+  applyStoredSettings();
 })();
+
+function applyStoredSettings() {
+  var theme = localStorage.getItem('theme');
+  var accent = localStorage.getItem('accentColor');
+  var fontSize = localStorage.getItem('fontSize');
+  if (theme === 'dark') document.body.classList.add('dark');
+  if (accent) document.documentElement.style.setProperty('--primary', accent);
+  if (fontSize) {
+    document.body.classList.remove('font-small', 'font-medium', 'font-large');
+    document.body.classList.add('font-' + fontSize);
+  }
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function (s) {
@@ -28,6 +64,13 @@ function showScreen(id) {
 }
 
 function showErr(id, msg) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function () { el.classList.remove('show'); }, 4000);
+}
+
+function showSuccess(id, msg) {
   var el = document.getElementById(id);
   el.textContent = msg;
   el.classList.add('show');
@@ -56,6 +99,7 @@ async function register() {
     var data = await res.json();
     if (!res.ok) return showErr('regErr', data.error);
     currentUser = data;
+    applyUserSettings();
     showScreen('dashboardScreen');
   } catch (err) {
     showErr('regErr', 'Server bilan aloqa xatosi.');
@@ -74,6 +118,7 @@ async function login() {
     var data = await res.json();
     if (!res.ok) return showErr('loginErr', data.error);
     currentUser = data;
+    applyUserSettings();
     showScreen('dashboardScreen');
   } catch (err) {
     showErr('loginErr', 'Server bilan aloqa xatosi.');
@@ -82,7 +127,33 @@ async function login() {
 
 function logout() {
   currentUser = null;
+  document.body.classList.remove('dark');
+  document.body.classList.remove('font-small', 'font-medium', 'font-large');
+  document.documentElement.style.setProperty('--primary', '#4361ee');
+  localStorage.removeItem('theme');
+  localStorage.removeItem('accentColor');
+  localStorage.removeItem('fontSize');
   showScreen('welcomeScreen');
+}
+
+function applyUserSettings() {
+  if (!currentUser) return;
+  if (currentUser.theme === 'dark') {
+    document.body.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    document.body.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }
+  if (currentUser.accentColor) {
+    document.documentElement.style.setProperty('--primary', currentUser.accentColor);
+    localStorage.setItem('accentColor', currentUser.accentColor);
+  }
+  if (currentUser.fontSize) {
+    document.body.classList.remove('font-small', 'font-medium', 'font-large');
+    document.body.classList.add('font-' + currentUser.fontSize);
+    localStorage.setItem('fontSize', currentUser.fontSize);
+  }
 }
 
 // ═══════ DASHBOARD ═══════
@@ -97,6 +168,7 @@ function refreshDashboard() {
   }
   updateProfileTab();
   updateStatsTab();
+  initSettingsTab();
 }
 
 function showDashTab(tab) {
@@ -112,6 +184,9 @@ function showDashTab(tab) {
   if (tab === 'admin') loadAdmin();
   if (tab === 'stats') updateStatsTab();
   if (tab === 'profile') updateProfileTab();
+  if (tab === 'settings') initSettingsTab();
+  if (tab === 'achievements') renderAchievements();
+  if (tab === 'history') renderHistory();
 }
 
 function selectSubject(subject) {
@@ -128,13 +203,209 @@ function updateProfileTab() {
   document.getElementById('profileAvatar').textContent = initials;
   document.getElementById('profileName').textContent = currentUser.name;
   document.getElementById('profileEmail').textContent = currentUser.email;
-  document.getElementById('profileSchool').textContent = currentUser.school ? '🏫 ' + currentUser.school : '';
-  document.getElementById('profileRegion').textContent = currentUser.region ? '📍 ' + currentUser.region : '';
-  document.getElementById('profileGrade').textContent = currentUser.grade ? '📚 ' + currentUser.grade : '';
+  document.getElementById('profileSchool').textContent = currentUser.school ? '\uD83C\uDFEB ' + currentUser.school : '';
+  document.getElementById('profileRegion').textContent = currentUser.region ? '\uD83D\uDCCD ' + currentUser.region : '';
+  document.getElementById('profileGrade').textContent = currentUser.grade ? '\uD83D\uDCDA ' + currentUser.grade : '';
+  if (currentUser.createdAt) {
+    var d = new Date(currentUser.createdAt);
+    document.getElementById('profileJoined').textContent = '\uD83D\uDCC5 Qo\'shilgan: ' + d.toLocaleDateString();
+  }
   document.getElementById('profTests').textContent = currentUser.totalTests || 0;
   document.getElementById('profCorrect').textContent = currentUser.totalCorrect || 0;
   var avg = currentUser.totalQuestions > 0 ? Math.round((currentUser.totalCorrect / currentUser.totalQuestions) * 100) : 0;
   document.getElementById('profAvg').textContent = avg + '%';
+}
+
+function toggleEditProfile() {
+  var form = document.getElementById('editProfileForm');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    document.getElementById('editName').value = currentUser.name || '';
+    document.getElementById('editSchool').value = currentUser.school || '';
+    document.getElementById('editRegion').value = currentUser.region || '';
+    document.getElementById('editGrade').value = currentUser.grade || '';
+  } else {
+    form.style.display = 'none';
+  }
+}
+
+async function saveProfile() {
+  var name = document.getElementById('editName').value.trim();
+  var school = document.getElementById('editSchool').value.trim();
+  var region = document.getElementById('editRegion').value;
+  var grade = document.getElementById('editGrade').value;
+
+  if (!name) return showErr('editErr', 'Ismingizni kiriting.');
+
+  try {
+    var res = await fetch(API + '/api/auth/profile/' + currentUser.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, school: school, region: region, grade: grade }),
+    });
+    var data = await res.json();
+    if (!res.ok) return showErr('editErr', data.error);
+    currentUser = data;
+    updateProfileTab();
+    showSuccess('editMsg', "Profil muvaffaqiyatli yangilandi!");
+  } catch (err) {
+    showErr('editErr', 'Server bilan aloqa xatosi.');
+  }
+}
+
+function toggleChangePassword() {
+  var form = document.getElementById('changePasswordForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function changePassword() {
+  var cur = document.getElementById('curPass').value;
+  var newP = document.getElementById('newPass').value;
+
+  if (!cur) return showErr('passErr', 'Joriy parolni kiriting.');
+  if (newP.length < 6) return showErr('passErr', "Yangi parol kamida 6 ta belgi bo'lishi kerak.");
+
+  try {
+    var res = await fetch(API + '/api/auth/password/' + currentUser.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: cur, newPassword: newP }),
+    });
+    var data = await res.json();
+    if (!res.ok) return showErr('passErr', data.error);
+    showSuccess('passMsg', data.message);
+    document.getElementById('curPass').value = '';
+    document.getElementById('newPass').value = '';
+  } catch (err) {
+    showErr('passErr', 'Server bilan aloqa xatosi.');
+  }
+}
+
+// ═══════ SETTINGS ═══════
+function initSettingsTab() {
+  if (!currentUser) return;
+
+  var toggle = document.getElementById('themeToggle');
+  if (document.body.classList.contains('dark')) {
+    toggle.classList.add('on');
+  } else {
+    toggle.classList.remove('on');
+  }
+
+  var picker = document.getElementById('colorPicker');
+  picker.innerHTML = '';
+  var currentAccent = currentUser.accentColor || '#4361ee';
+  ACCENT_COLORS.forEach(function (c) {
+    var swatch = document.createElement('div');
+    swatch.className = 'color-swatch' + (c.value === currentAccent ? ' active' : '');
+    swatch.style.background = c.value;
+    swatch.title = c.name;
+    swatch.onclick = function () { setAccentColor(c.value); };
+    picker.appendChild(swatch);
+  });
+
+  var fsBtns = document.querySelectorAll('.font-size-btn');
+  var currentFS = currentUser.fontSize || 'medium';
+  fsBtns.forEach(function (btn) {
+    btn.classList.remove('active');
+    var size = btn.textContent === 'Kichik' ? 'small' : btn.textContent === 'Katta' ? 'large' : 'medium';
+    if (size === currentFS) btn.classList.add('active');
+  });
+}
+
+function toggleTheme() {
+  var isDark = document.body.classList.toggle('dark');
+  document.getElementById('themeToggle').classList.toggle('on');
+  var theme = isDark ? 'dark' : 'light';
+  localStorage.setItem('theme', theme);
+  if (currentUser) {
+    currentUser.theme = theme;
+    saveSettings({ theme: theme });
+  }
+}
+
+function setAccentColor(color) {
+  document.documentElement.style.setProperty('--primary', color);
+  localStorage.setItem('accentColor', color);
+  if (currentUser) {
+    currentUser.accentColor = color;
+    saveSettings({ accentColor: color });
+  }
+  initSettingsTab();
+}
+
+function setFontSize(size) {
+  document.body.classList.remove('font-small', 'font-medium', 'font-large');
+  document.body.classList.add('font-' + size);
+  localStorage.setItem('fontSize', size);
+  if (currentUser) {
+    currentUser.fontSize = size;
+    saveSettings({ fontSize: size });
+  }
+  var fsBtns = document.querySelectorAll('.font-size-btn');
+  fsBtns.forEach(function (btn) {
+    btn.classList.remove('active');
+    var s = btn.textContent === 'Kichik' ? 'small' : btn.textContent === 'Katta' ? 'large' : 'medium';
+    if (s === size) btn.classList.add('active');
+  });
+}
+
+async function saveSettings(settings) {
+  try {
+    await fetch(API + '/api/auth/settings/' + currentUser.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+  } catch (err) {
+    console.error('Settings save error:', err);
+  }
+}
+
+// ═══════ ACHIEVEMENTS ═══════
+function renderAchievements() {
+  if (!currentUser) return;
+  var grid = document.getElementById('achGrid');
+  grid.innerHTML = '';
+  var earned = currentUser.achievements || [];
+
+  ALL_ACHIEVEMENTS.forEach(function (a) {
+    var isEarned = earned.indexOf(a.id) >= 0;
+    var div = document.createElement('div');
+    div.className = 'ach-card ' + (isEarned ? 'earned' : 'locked');
+    div.innerHTML = '<div class="ach-icon">' + a.icon + '</div>' +
+      '<div class="ach-name">' + a.name + '</div>' +
+      '<div class="ach-desc">' + a.desc + '</div>';
+    grid.appendChild(div);
+  });
+}
+
+// ═══════ HISTORY ═══════
+function renderHistory() {
+  if (!currentUser) return;
+  var list = document.getElementById('historyList');
+  list.innerHTML = '';
+  var history = currentUser.testHistory || [];
+
+  if (history.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:.88rem;text-align:center;margin-top:16px">Hali test topshirmadingiz</p>';
+    return;
+  }
+
+  var sorted = history.slice().reverse();
+  sorted.forEach(function (h) {
+    var pass = h.pct >= 70;
+    var d = new Date(h.date);
+    var dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = '<div class="hi-info">' +
+      '<div class="hi-title">' + h.sinf + ' — ' + h.testTitle + '</div>' +
+      '<div class="hi-meta">' + h.topic + ' | ' + dateStr + '</div>' +
+      '</div>' +
+      '<div class="hi-pct ' + (pass ? 'pass' : 'fail') + '">' + h.pct + '%</div>';
+    list.appendChild(div);
+  });
 }
 
 // ═══════ STATS ═══════
@@ -159,11 +430,11 @@ function updateStatsTab() {
       var sinf = parts[0];
       var testIdx = parseInt(parts[1]);
       var testInfo = DB[sinf] && DB[sinf].tests[testIdx];
-      var title = testInfo ? sinf + ' — ' + testInfo.title : key;
+      var title = testInfo ? sinf + ' \u2014 ' + testInfo.title : key;
       var pass = pct >= 70;
       var div = document.createElement('div');
       div.className = 'prev-box ' + (pass ? 'pass' : 'fail');
-      div.innerHTML = '<strong>' + title + '</strong>: ' + pct + '% — ' + (pass ? "\u2713 O'tgan" : "\u2717 O'tmagan");
+      div.innerHTML = '<strong>' + title + '</strong>: ' + pct + '% \u2014 ' + (pass ? "\u2713 O'tgan" : "\u2717 O'tmagan");
       list.appendChild(div);
     });
   }
@@ -183,11 +454,11 @@ async function loadLeaderboard() {
     var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Testlar</th><th>Natija</th></tr></thead><tbody>';
     data.forEach(function (u) {
       var rankClass = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
-      var medal = u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank;
+      var medal = u.rank === 1 ? '\uD83E\uDD47' : u.rank === 2 ? '\uD83E\uDD48' : u.rank === 3 ? '\uD83E\uDD49' : u.rank;
       html += '<tr class="lb-row">';
       html += '<td><span class="lb-rank ' + rankClass + '">' + medal + '</span></td>';
       html += '<td>' + u.name + '</td>';
-      html += '<td><span class="lb-school">' + (u.school || '—') + '</span></td>';
+      html += '<td><span class="lb-school">' + (u.school || '\u2014') + '</span></td>';
       html += '<td>' + u.totalTests + '</td>';
       html += '<td><strong>' + u.avgPct + '%</strong></td>';
       html += '</tr>';
@@ -230,7 +501,7 @@ async function loadAdmin() {
       html += '<div class="admin-card"><h3>So\'nggi ro\'yxatdan o\'tganlar</h3>';
       data.recentUsers.forEach(function (u) {
         var d = new Date(u.createdAt);
-        html += '<div class="admin-user-row"><span class="name">' + u.name + '</span><span class="meta">' + (u.school || '—') + ' | ' + d.toLocaleDateString() + '</span></div>';
+        html += '<div class="admin-user-row"><span class="name">' + u.name + '</span><span class="meta">' + (u.school || '\u2014') + ' | ' + d.toLocaleDateString() + '</span></div>';
       });
       html += '</div>';
     }
@@ -254,7 +525,7 @@ async function loadAdminUsers() {
     var html = '';
     data.users.forEach(function (u) {
       html += '<div class="admin-user-row">';
-      html += '<div><span class="name">' + u.name + '</span><br><span class="meta">' + u.email + ' | ' + (u.school || '—') + ' | ' + (u.grade || '—') + ' | Tests: ' + u.totalTests + ' | Avg: ' + u.avgPct + '%</span></div>';
+      html += '<div><span class="name">' + u.name + '</span><br><span class="meta">' + u.email + ' | ' + (u.school || '\u2014') + ' | ' + (u.grade || '\u2014') + ' | Tests: ' + u.totalTests + ' | Avg: ' + u.avgPct + '%</span></div>';
       if (u.role !== 'admin') {
         html += '<button class="btn-danger" onclick="deleteUser(\'' + u.id + '\')">O\'chirish</button>';
       } else {
@@ -299,7 +570,7 @@ function selectSinf(sinfKey) {
   selectedSinf = sinfKey;
   var sinf = DB[sinfKey];
   document.getElementById('bc1').textContent = sinf.label;
-  document.getElementById('nazTitle').textContent = sinf.label + ' — nazorat ishini tanlang';
+  document.getElementById('nazTitle').textContent = sinf.label + ' \u2014 nazorat ishini tanlang';
 
   var grid = document.getElementById('nazGrid');
   grid.innerHTML = '';
@@ -310,7 +581,7 @@ function selectSinf(sinfKey) {
     var prev = currentUser.results[key];
     var prevHtml = '';
     if (prev != null) {
-      prevHtml = '<div style="font-size:.72rem;margin-top:4px;color:' + (prev >= 70 ? '#027a5c' : '#9d0208') + ';font-weight:700">' + prev + '% — ' + (prev >= 70 ? "\u2713 O'tgan" : "\u2717 O'tmagan") + '</div>';
+      prevHtml = '<div style="font-size:.72rem;margin-top:4px;color:' + (prev >= 70 ? '#027a5c' : '#9d0208') + ';font-weight:700">' + prev + '% \u2014 ' + (prev >= 70 ? "\u2713 O'tgan" : "\u2717 O'tmagan") + '</div>';
     }
     btn.innerHTML = '<div class="naz-n">' + t.title + '</div><div class="naz-t">' + t.topic + '</div>' + prevHtml;
     btn.onclick = function () { selectTest(i); };
@@ -323,14 +594,14 @@ function selectTest(idx) {
   selectedTestIdx = idx;
   var t = DB[selectedSinf].tests[idx];
   var total = t.questions.length;
-  document.getElementById('introTitle').textContent = t.title + ' — Testga tayyormisiz?';
+  document.getElementById('introTitle').textContent = t.title + ' \u2014 Testga tayyormisiz?';
   document.getElementById('introDesc').textContent = 'Jami ' + total + " ta savol. Savollar tasodifiy tartibda beriladi. Orqaga qaytib bo'lmaydi.\n\nSertifikat olish uchun 70% yoki undan yuqori natija kerak.";
 
   var key = selectedSinf + '_' + idx;
   var prev = currentUser.results[key];
   var prevEl = document.getElementById('introPrev');
   if (prev != null) {
-    prevEl.innerHTML = '<div class="prev-box ' + (prev >= 70 ? 'pass' : 'fail') + '">Oldingi natijangiz: <strong>' + prev + '%</strong> — ' + (prev >= 70 ? "\u2713 Test o'tilgan" : "\u2717 Test o'tilmagan") + '</div>';
+    prevEl.innerHTML = '<div class="prev-box ' + (prev >= 70 ? 'pass' : 'fail') + '">Oldingi natijangiz: <strong>' + prev + '%</strong> \u2014 ' + (prev >= 70 ? "\u2713 Test o'tilgan" : "\u2717 Test o'tilmagan") + '</div>';
   } else {
     prevEl.innerHTML = '';
   }
@@ -398,7 +669,7 @@ function selectAnswer(chosen, cont) {
   btns[chosen].querySelector('.opt-letter').style.background = 'var(--primary)';
   btns[chosen].querySelector('.opt-letter').style.color = '#fff';
   var nb = document.getElementById('nextBtn');
-  nb.textContent = qIndex + 1 < questions.length ? 'Keyingi savol →' : 'Testni yakunlash →';
+  nb.textContent = qIndex + 1 < questions.length ? 'Keyingi savol \u2192' : 'Testni yakunlash \u2192';
   nb.classList.add('show');
 }
 
@@ -422,6 +693,15 @@ async function submitQuiz() {
     currentUser.totalTests = (currentUser.totalTests || 0) + 1;
     currentUser.totalCorrect = (currentUser.totalCorrect || 0) + data.score;
     currentUser.totalQuestions = (currentUser.totalQuestions || 0) + data.total;
+    var t = DB[selectedSinf].tests[selectedTestIdx];
+    if (!currentUser.testHistory) currentUser.testHistory = [];
+    currentUser.testHistory.push({ sinf: selectedSinf, testIdx: selectedTestIdx, testTitle: t.title, topic: t.topic, score: data.score, total: data.total, pct: data.pct, date: new Date().toISOString() });
+    // Refresh user to get updated achievements
+    try {
+      var pRes = await fetch(API + '/api/auth/profile/' + currentUser.id);
+      var pData = await pRes.json();
+      if (pRes.ok) currentUser = pData;
+    } catch (e) {}
     showResult(data.score, data.total, data.pct);
   } catch (err) {
     alert('Server bilan aloqa xatosi.');
@@ -510,7 +790,7 @@ function generateCertificate(name, pct, sinf, testTitle, topic) {
 
   ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = '18px Nunito,sans-serif'; ctx.fillText('ga topshirildi', W / 2, 368);
   ctx.fillStyle = '#1a1a2e'; ctx.font = 'bold 20px Nunito,sans-serif';
-  ctx.fillText(sinf.toUpperCase() + ' — ' + testTitle, W / 2, 408);
+  ctx.fillText(sinf.toUpperCase() + ' \u2014 ' + testTitle, W / 2, 408);
   ctx.fillStyle = 'rgba(107,125,179,0.9)'; ctx.font = '16px Nunito,sans-serif'; ctx.fillText(topic, W / 2, 434);
 
   var bx = W / 2 - 90, by = 458, bw = 180, bh = 56;
@@ -533,9 +813,8 @@ function generateCertificate(name, pct, sinf, testTitle, topic) {
   ctx.textAlign = 'right'; ctx.font = '13px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.8)';
   ctx.fillText('Platforma:', W - 100, 570);
   ctx.font = 'bold 16px Nunito,sans-serif'; ctx.fillStyle = '#1a1a2e';
-  ctx.fillText('InforTest — Informatika testi', W - 100, 592);
+  ctx.fillText('InforTest \u2014 Informatika testi', W - 100, 592);
 
-  // Location
   ctx.textAlign = 'center'; ctx.font = '11px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.6)';
   ctx.fillText("O'zbekiston, Namangan viloyati, Chortoq tumani, 6-maktab", W / 2, 620);
 
