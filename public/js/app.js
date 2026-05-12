@@ -157,9 +157,27 @@ function applyUserSettings() {
 }
 
 // ═══════ DASHBOARD ═══════
+var TAB_TITLES = {
+  subjects: '\uD83D\uDCDA Fanlar',
+  stats: '\uD83D\uDCCA Statistika',
+  history: '\uD83D\uDCCB Test tarixi',
+  leaderboard: '\uD83C\uDFC5 Reyting',
+  profile: '\uD83D\uDC64 Profil',
+  settings: '\uD83C\uDFA8 Sozlamalar',
+  achievements: '\uD83C\uDFC6 Yutuqlar',
+  admin: '\u2699\uFE0F Admin',
+};
+
 function refreshDashboard() {
   if (!currentUser) return;
   document.getElementById('dashGreet').textContent = 'Salom, ' + currentUser.name + '! \uD83D\uDC4B';
+
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarEmail').textContent = currentUser.email;
+
+  var initials = currentUser.name.split(' ').map(function (w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
+  document.getElementById('topbarAvatar').textContent = initials;
+
   var adminTab = document.getElementById('adminTab');
   if (currentUser.role === 'admin') {
     adminTab.style.display = '';
@@ -171,14 +189,16 @@ function refreshDashboard() {
   initSettingsTab();
 }
 
-function showDashTab(tab) {
+function showDashTab(tab, el) {
   var tabs = document.querySelectorAll('.dash-tab');
-  tabs.forEach(function (t) { t.style.display = 'none'; });
-  document.getElementById('tab-' + tab).style.display = 'block';
+  tabs.forEach(function (t) { t.classList.remove('active-tab'); });
+  document.getElementById('tab-' + tab).classList.add('active-tab');
 
-  var navTabs = document.querySelectorAll('.nav-tab');
-  navTabs.forEach(function (t) { t.classList.remove('active'); });
-  event.target.closest('.nav-tab').classList.add('active');
+  var navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(function (n) { n.classList.remove('active'); });
+  if (el) el.classList.add('active');
+
+  document.getElementById('topbarTitle').textContent = TAB_TITLES[tab] || tab;
 
   if (tab === 'leaderboard') loadLeaderboard();
   if (tab === 'admin') loadAdmin();
@@ -187,6 +207,17 @@ function showDashTab(tab) {
   if (tab === 'settings') initSettingsTab();
   if (tab === 'achievements') renderAchievements();
   if (tab === 'history') renderHistory();
+
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
 function selectSubject(subject) {
@@ -643,7 +674,7 @@ function renderQuestion() {
   document.getElementById('qNum').textContent = qIndex + 1;
   document.getElementById('progressFill').style.width = (qIndex / total) * 100 + '%';
   document.getElementById('questionText').textContent = q.q;
-  document.getElementById('nextBtn').classList.remove('show');
+  document.getElementById('nextBtn').style.display = 'none';
 
   var letters = ['A', 'B', 'C', 'D'];
   var cont = document.getElementById('optionsContainer');
@@ -670,7 +701,7 @@ function selectAnswer(chosen, cont) {
   btns[chosen].querySelector('.opt-letter').style.color = '#fff';
   var nb = document.getElementById('nextBtn');
   nb.textContent = qIndex + 1 < questions.length ? 'Keyingi savol \u2192' : 'Testni yakunlash \u2192';
-  nb.classList.add('show');
+  nb.style.display = 'block';
 }
 
 function nextQuestion() {
