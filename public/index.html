@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informatika Testi — 5-10 Sinflar</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page">
+
+<!-- 1 WELCOME -->
+<div id="welcomeScreen" class="screen active">
+  <div class="card" style="text-align:center">
+    <div style="font-size:3.2rem;margin-bottom:14px">📚</div>
+    <div class="logo-mark">InforTest</div>
+    <div class="logo-sub">Informatika bo'yicha onlayn test tizimi</div>
+    <div class="feat-row" style="margin-top:24px">
+      <div class="feat"><div class="feat-icon">🏫</div><div class="feat-lbl">5–10 sinflar</div></div>
+      <div class="feat"><div class="feat-icon">📝</div><div class="feat-lbl">20 savol / test</div></div>
+      <div class="feat"><div class="feat-icon">🏆</div><div class="feat-lbl">Sertifikat 70%+</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('loginScreen')">Kirish →</button>
+    <button class="btn btn-outline" onclick="showScreen('registerScreen')">Ro'yxatdan o'tish</button>
+  </div>
+</div>
+
+<!-- 2 REGISTER -->
+<div id="registerScreen" class="screen">
+  <div class="card">
+    <div class="logo-mark">InforTest</div>
+    <div class="logo-sub">Ro'yxatdan o'tish</div>
+    <br>
+    <h2>Akkaunt yaratish</h2>
+    <p class="subtitle">Ma'lumotlaringizni kiriting</p>
+    <div id="regErr" class="err"></div>
+    <div class="field"><label>Ism va familiya</label><input type="text" id="regName" placeholder="Masalan: Jasur Karimov" autocomplete="off"></div>
+    <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="sizning@email.uz" autocomplete="off"></div>
+    <div class="field"><label>Parol</label><input type="password" id="regPass" placeholder="Kamida 6 ta belgi"></div>
+    <button class="btn btn-primary" onclick="register()">Ro'yxatdan o'tish →</button>
+    <div class="switch-text">Akkauntingiz bormi? <a onclick="showScreen('loginScreen')">Kirish</a></div>
+    <button class="btn btn-outline" onclick="showScreen('welcomeScreen')">← Orqaga</button>
+  </div>
+</div>
+
+<!-- 3 LOGIN -->
+<div id="loginScreen" class="screen">
+  <div class="card">
+    <div class="logo-mark">InforTest</div>
+    <div class="logo-sub">Kirish</div>
+    <br>
+    <h2>Xush kelibsiz!</h2>
+    <p class="subtitle">Testni boshlash uchun kiring</p>
+    <div id="loginErr" class="err"></div>
+    <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="sizning@email.uz"></div>
+    <div class="field"><label>Parol</label><input type="password" id="loginPass" placeholder="Parolingiz"></div>
+    <button class="btn btn-primary" onclick="login()">Kirish →</button>
+    <div class="switch-text">Akkaunt yo'qmi? <a onclick="showScreen('registerScreen')">Ro'yxatdan o'tish</a></div>
+    <button class="btn btn-outline" onclick="showScreen('welcomeScreen')">← Orqaga</button>
+  </div>
+</div>
+
+<!-- 4 SINF TANLASH -->
+<div id="sinfScreen" class="screen">
+  <div class="card">
+    <div class="logo-mark">InforTest</div>
+    <br>
+    <h2 id="sinfGreet">Salom!</h2>
+    <p class="subtitle">Sinfingizni tanlang</p>
+    <div class="sinf-grid" id="sinfGrid"></div>
+    <button class="btn btn-outline" onclick="logout()">← Chiqish</button>
+  </div>
+</div>
+
+<!-- 5 NAZORAT ISHI TANLASH -->
+<div id="nazScreen" class="screen">
+  <div class="card">
+    <div class="breadcrumb"><span id="bc1"></span><span class="sep">›</span>Nazorat ishi</div>
+    <h2 id="nazTitle">Nazorat ishini tanlang</h2>
+    <p class="subtitle">Qaysi mavzuda test topshirmoqchisiz?</p>
+    <div class="naz-grid" id="nazGrid"></div>
+    <div id="nazPrev"></div>
+    <button class="btn btn-outline" onclick="showScreen('sinfScreen')">← Orqaga</button>
+  </div>
+</div>
+
+<!-- 6 INTRO -->
+<div id="introScreen" class="screen">
+  <div class="card" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:14px">🧠</div>
+    <h2 id="introTitle">Testga tayyormisiz?</h2>
+    <p class="subtitle" id="introDesc">...</p>
+    <div id="introPrev"></div>
+    <button class="btn btn-primary" onclick="startQuiz()">Testni boshlash →</button>
+    <button class="btn btn-outline" onclick="showScreen('nazScreen')">← Orqaga</button>
+  </div>
+</div>
+
+<!-- 7 QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="card">
+    <div class="quiz-meta">
+      <div class="q-counter">Savol <b id="qNum">1</b> / <span id="qTotal">20</span></div>
+      <div class="badge-user" id="userBadge">—</div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="question-text" id="questionText">...</div>
+    <div class="options" id="optionsContainer"></div>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Keyingi savol →</button>
+  </div>
+</div>
+
+<!-- 8 RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="card">
+    <div id="resultRing" class="result-ring pass">
+      <span id="resultPct">0%</span>
+      <small>natija</small>
+    </div>
+    <div class="result-verdict">
+      <h2 id="verdictTitle">—</h2>
+      <p id="verdictText">—</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><span class="val" id="statC">0</span><span class="lbl">To'g'ri</span></div>
+      <div class="stat-box"><span class="val" id="statW">0</span><span class="lbl">Noto'g'ri</span></div>
+      <div class="stat-box"><span class="val" id="statT">0</span><span class="lbl">Jami</span></div>
+    </div>
+    <div id="certSection" style="display:none">
+      <hr class="divider">
+      <p class="subtitle" style="margin-bottom:14px;text-align:center">🏆 Tabriklaymiz! Sertifikatingiz tayyor:</p>
+      <div class="cert-preview" id="certPreviewBox"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:4px" onclick="downloadCert()">⬇ Sertifikatni yuklab olish (PNG)</button>
+    </div>
+    <hr class="divider">
+    <button class="btn btn-green" onclick="goToNaz()">Yana bir test topshirish</button>
+    <button class="btn btn-accent" onclick="showScreen('sinfScreen')">Boshqa sinfni tanlash</button>
+    <button class="btn btn-outline" onclick="logout()">← Chiqish</button>
+  </div>
+</div>
+
+</div><!-- /page -->
+<canvas id="certCanvas"></canvas>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
