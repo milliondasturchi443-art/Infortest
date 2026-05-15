@@ -7,6 +7,7 @@ const testHistorySchema = new mongoose.Schema(
     testIdx: Number,
     testTitle: String,
     topic: String,
+    subject: { type: String, default: 'informatika' },
     score: Number,
     total: Number,
     pct: Number,
@@ -39,6 +40,11 @@ const userSchema = new mongoose.Schema(
     accentColor: { type: String, default: '#4361ee' },
     fontSize: { type: String, enum: ['small', 'medium', 'large'], default: 'medium' },
     achievements: { type: [String], default: [] },
+    xp: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
+    bestStreak: { type: Number, default: 0 },
+    lastActiveDate: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -77,6 +83,11 @@ userSchema.methods.toPublic = function () {
     accentColor: this.accentColor,
     fontSize: this.fontSize,
     achievements: this.achievements || [],
+    xp: this.xp || 0,
+    level: this.level || 1,
+    streak: this.streak || 0,
+    bestStreak: this.bestStreak || 0,
+    lastActiveDate: this.lastActiveDate,
     createdAt: this.createdAt,
   };
 };

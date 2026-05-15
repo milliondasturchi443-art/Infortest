@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InforTest — Informatika bo'yicha onlayn test tizimi</title>
+<title>InforTest — Ko'p fanli onlayn test tizimi</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -15,14 +15,16 @@
     <div class="auth-card" style="max-width:520px;text-align:center">
       <div style="font-size:3.5rem;margin-bottom:14px">📚</div>
       <div class="logo">InforTest</div>
-      <div class="logo-sub">Informatika bo'yicha onlayn test tizimi</div>
+      <div class="logo-sub">Ko'p fanli onlayn test tizimi</div>
       <div class="feat-grid">
-        <div class="feat"><div class="feat-icon">🏫</div><div class="feat-lbl">5–10 sinflar</div></div>
-        <div class="feat"><div class="feat-icon">📝</div><div class="feat-lbl">20 savol / test</div></div>
-        <div class="feat"><div class="feat-icon">🏆</div><div class="feat-lbl">Sertifikat 70%+</div></div>
+        <div class="feat"><div class="feat-icon">💻</div><div class="feat-lbl">Informatika</div></div>
+        <div class="feat"><div class="feat-icon">📐</div><div class="feat-lbl">Matematika</div></div>
+        <div class="feat"><div class="feat-icon">🔬</div><div class="feat-lbl">Fizika</div></div>
+        <div class="feat"><div class="feat-icon">🧪</div><div class="feat-lbl">Kimyo</div></div>
+        <div class="feat"><div class="feat-icon">🏆</div><div class="feat-lbl">Sertifikat</div></div>
+        <div class="feat"><div class="feat-icon">🔥</div><div class="feat-lbl">Streak</div></div>
+        <div class="feat"><div class="feat-icon">⚡</div><div class="feat-lbl">XP & Level</div></div>
         <div class="feat"><div class="feat-icon">📊</div><div class="feat-lbl">Statistika</div></div>
-        <div class="feat"><div class="feat-icon">🏅</div><div class="feat-lbl">Reyting</div></div>
-        <div class="feat"><div class="feat-icon">🎨</div><div class="feat-lbl">Kustomizatsiya</div></div>
       </div>
       <button class="btn btn-primary" onclick="showScreen('loginScreen')">Kirish →</button>
       <button class="btn btn-outline" style="border-color:rgba(255,255,255,0.3);color:#fff" onclick="showScreen('registerScreen')">Ro'yxatdan o'tish</button>
@@ -113,10 +115,15 @@
           <div class="user-name" id="sidebarName">—</div>
           <div class="user-email" id="sidebarEmail">—</div>
         </div>
+        <div id="sidebarXP"></div>
+        <div id="sidebarStreak"></div>
       </div>
       <nav class="sidebar-nav">
         <div class="nav-item active" data-tab="subjects" onclick="showDashTab('subjects',this)">
           <span class="nav-icon">📚</span> Fanlar
+        </div>
+        <div class="nav-item" data-tab="daily" onclick="showDashTab('daily',this)">
+          <span class="nav-icon">🌟</span> Kunlik vazifa
         </div>
         <div class="nav-item" data-tab="stats" onclick="showDashTab('stats',this)">
           <span class="nav-icon">📊</span> Statistika
@@ -166,28 +173,16 @@
         <div id="tab-subjects" class="dash-tab active-tab">
           <h2 class="section-title" id="dashGreet">Salom!</h2>
           <p class="section-desc">Fanni tanlang va testlarni boshlang</p>
-          <div class="subject-grid">
-            <div class="subject-card" onclick="selectSubject('informatika')">
-              <div class="subj-icon">💻</div>
-              <div class="subj-name">Informatika</div>
-              <div class="subj-desc">5-10 sinf, 24 ta test</div>
-            </div>
-            <div class="subject-card disabled">
-              <div class="subj-icon">📐</div>
-              <div class="subj-name">Matematika</div>
-              <div class="subj-desc">Tez kunda...</div>
-            </div>
-            <div class="subject-card disabled">
-              <div class="subj-icon">🔬</div>
-              <div class="subj-name">Fizika</div>
-              <div class="subj-desc">Tez kunda...</div>
-            </div>
-            <div class="subject-card disabled">
-              <div class="subj-icon">🧪</div>
-              <div class="subj-name">Kimyo</div>
-              <div class="subj-desc">Tez kunda...</div>
-            </div>
+          <div class="subject-grid" id="subjectGrid">
+            <!-- Dynamically generated -->
           </div>
+        </div>
+
+        <!-- DAILY CHALLENGE -->
+        <div id="tab-daily" class="dash-tab">
+          <h2 class="section-title">🌟 Kunlik vazifa</h2>
+          <p class="section-desc">Har kuni yangi vazifa — bonus XP qo'lga kiriting!</p>
+          <div id="dailyChallengeContent"></div>
         </div>
 
         <!-- STATS -->
@@ -199,6 +194,9 @@
             <div class="stat-card"><span class="val" id="myCorrect">0</span><span class="lbl">To'g'ri</span></div>
             <div class="stat-card"><span class="val" id="myAvg">0%</span><span class="lbl">O'rtacha</span></div>
           </div>
+          <h3 class="section-title" style="font-size:.9rem;margin-top:24px">Fanlar bo'yicha</h3>
+          <div class="stats-row" id="subjectStatsGrid"></div>
+          <h3 class="section-title" style="font-size:.9rem;margin-top:24px">Barcha natijalar</h3>
           <div id="myResultsList"></div>
         </div>
 
@@ -235,6 +233,11 @@
               <div class="stat-card"><span class="val" id="profTests">0</span><span class="lbl">Testlar</span></div>
               <div class="stat-card"><span class="val" id="profCorrect">0</span><span class="lbl">To'g'ri</span></div>
               <div class="stat-card"><span class="val" id="profAvg">0%</span><span class="lbl">O'rtacha</span></div>
+            </div>
+            <div class="stats-row" style="margin-top:8px">
+              <div class="stat-card"><span class="val" id="profLevel">1</span><span class="lbl">Daraja</span></div>
+              <div class="stat-card"><span class="val" id="profXP">0 XP</span><span class="lbl">Tajriba</span></div>
+              <div class="stat-card"><span class="val" id="profStreak">0 kun</span><span class="lbl">Streak</span></div>
             </div>
           </div>
           <hr class="divider">
@@ -341,7 +344,7 @@
   <div class="app-layout">
     <div class="main-content" style="margin-left:0">
       <div class="topbar">
-        <h1>Sinfingizni tanlang</h1>
+        <h1 id="sinfScreenTitle">Sinfingizni tanlang</h1>
         <button class="logout-btn" onclick="showScreen('dashboardScreen')">← Orqaga</button>
       </div>
       <div class="content-area">
@@ -389,8 +392,14 @@
   <div class="app-layout">
     <div class="main-content" style="margin-left:0">
       <div class="topbar">
-        <div class="q-counter">Savol <b id="qNum">1</b> / <span id="qTotal">20</span></div>
-        <div class="badge-user" id="userBadge">—</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="q-counter">Savol <b id="qNum">1</b> / <span id="qTotal">20</span></div>
+          <div id="quizSubjectBadge" class="quiz-subject-badge"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="quizTimer"></div>
+          <div class="badge-user" id="userBadge">—</div>
+        </div>
       </div>
       <div class="quiz-container">
         <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -419,11 +428,13 @@
           <h2 id="verdictTitle">—</h2>
           <p id="verdictText" style="color:var(--muted);margin-top:8px">—</p>
         </div>
+        <div id="resultXPInfo"></div>
         <div class="stats-row">
           <div class="stat-card"><span class="val" id="statC">0</span><span class="lbl">To'g'ri</span></div>
           <div class="stat-card"><span class="val" id="statW">0</span><span class="lbl">Noto'g'ri</span></div>
           <div class="stat-card"><span class="val" id="statT">0</span><span class="lbl">Jami</span></div>
         </div>
+        <button class="btn btn-outline" id="studyModeBtn" style="display:none;max-width:320px;margin:8px auto" onclick="enterStudyMode()">📖 Javoblarni ko'rish (Study Mode)</button>
         <div id="certSection" style="display:none">
           <hr class="divider">
           <p class="section-desc" style="text-align:center">🏆 Tabriklaymiz! Sertifikatingiz tayyor:</p>
@@ -433,6 +444,21 @@
         <hr class="divider">
         <button class="btn btn-green" onclick="goToNaz()">Yana bir test topshirish</button>
         <button class="btn btn-accent" onclick="showScreen('sinfScreen')">Boshqa sinfni tanlash</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 10 STUDY MODE ══════ -->
+<div id="studyScreen" class="screen">
+  <div class="app-layout">
+    <div class="main-content" style="margin-left:0">
+      <div class="topbar">
+        <h1>📖 Study Mode</h1>
+        <button class="logout-btn" onclick="showScreen('resultScreen')">← Orqaga</button>
+      </div>
+      <div class="content-area">
+        <div id="studyModeContent"></div>
       </div>
     </div>
   </div>

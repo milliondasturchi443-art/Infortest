@@ -751,6 +751,134 @@ body.font-large { font-size:18px; }
 .dash-tab { display:none; }
 .dash-tab.active-tab { display:block; }
 
+/* ─── QUIZ TIMER ─── */
+.timer-ring {
+  width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:conic-gradient(var(--timer-color, #06d6a0) var(--pct, 100%), rgba(200,200,200,0.2) var(--pct, 100%));
+  position:relative;
+}
+.timer-ring::before {
+  content:''; position:absolute; width:38px; height:38px; border-radius:50%;
+  background:var(--card); top:5px; left:5px;
+}
+.timer-num {
+  position:relative; z-index:1; font-weight:900; font-size:.85rem; color:var(--text);
+}
+.quiz-subject-badge {
+  background:linear-gradient(135deg,var(--primary2),var(--accent));
+  color:#fff; padding:4px 12px; border-radius:12px; font-size:.72rem; font-weight:700;
+}
+
+/* ─── XP & STREAK BADGES ─── */
+.xp-badge { display:flex; align-items:center; gap:8px; padding:6px 0; }
+.xp-level {
+  background:linear-gradient(135deg,#f72585,#7209b7); color:#fff;
+  padding:3px 10px; border-radius:12px; font-size:.72rem; font-weight:800;
+}
+.xp-bar {
+  flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; min-width:60px;
+}
+.xp-fill {
+  height:100%; background:linear-gradient(90deg,#4361ee,#f72585); border-radius:3px;
+  transition:width .5s ease;
+}
+.xp-text { font-size:.68rem; color:var(--muted); font-weight:700; }
+.streak-badge {
+  display:inline-block; font-size:.72rem; font-weight:700; color:#f8961e;
+  padding:4px 10px; background:rgba(248,150,30,0.1); border-radius:10px;
+  animation:pulse 2s infinite;
+}
+
+/* ─── RESULT XP ─── */
+.result-badges { display:flex; gap:8px; justify-content:center; margin:12px 0; flex-wrap:wrap; }
+.result-xp {
+  background:linear-gradient(135deg,#06d6a0,#00b4d8); color:#fff;
+  padding:6px 16px; border-radius:16px; font-size:.82rem; font-weight:800;
+  animation:bounceIn .6s ease;
+}
+.result-level {
+  background:linear-gradient(135deg,#f72585,#7209b7); color:#fff;
+  padding:6px 16px; border-radius:16px; font-size:.82rem; font-weight:800;
+  animation:bounceIn .6s ease .1s backwards;
+}
+.result-streak {
+  background:linear-gradient(135deg,#f8961e,#ef233c); color:#fff;
+  padding:6px 16px; border-radius:16px; font-size:.82rem; font-weight:800;
+  animation:bounceIn .6s ease .2s backwards;
+}
+.lb-level {
+  background:linear-gradient(135deg,#f72585,#7209b7); color:#fff;
+  padding:2px 8px; border-radius:8px; font-size:.68rem; font-weight:800;
+}
+
+/* ─── DAILY CHALLENGE ─── */
+.daily-card {
+  background:linear-gradient(145deg,rgba(67,97,238,0.05),rgba(247,37,133,0.05));
+  border:2px solid var(--border); border-radius:var(--radius);
+  padding:32px; text-align:center; max-width:420px; margin:0 auto;
+  animation:scaleIn .5s ease;
+}
+.daily-icon { font-size:4rem; margin-bottom:12px; animation:float 3s ease-in-out infinite; }
+.daily-card h3 { font-size:1.2rem; font-weight:800; margin-bottom:16px; }
+.daily-info { text-align:left; margin:16px 0; }
+.daily-info > div { padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+.daily-label { font-weight:700; color:var(--muted); }
+.daily-bonus {
+  color:#06d6a0; font-weight:800; font-size:1rem; margin-top:8px;
+  animation:pulse 2s infinite;
+}
+
+/* ─── STUDY MODE ─── */
+.study-question {
+  background:var(--card); border:2px solid var(--border); border-radius:var(--radius);
+  padding:20px; margin-bottom:16px; animation:fadeInUp .4s ease backwards;
+}
+.study-question.correct { border-left:4px solid #06d6a0; }
+.study-question.wrong { border-left:4px solid #ef233c; }
+.study-q-num { font-weight:700; font-size:.95rem; margin-bottom:12px; line-height:1.5; }
+.study-opts { display:grid; gap:6px; }
+.study-opt {
+  padding:8px 14px; border-radius:10px; font-size:.85rem; font-weight:600;
+  background:rgba(0,0,0,0.02); border:1px solid transparent;
+}
+.study-opt.correct-opt {
+  background:rgba(6,214,160,0.1); border-color:#06d6a0; color:#027a5c;
+}
+.study-opt.wrong-opt {
+  background:rgba(239,35,60,0.1); border-color:#ef233c; color:#9d0208;
+  text-decoration:line-through;
+}
+.study-explanation {
+  margin-top:10px; font-size:.78rem; color:#ef233c; font-weight:700;
+  padding:8px 12px; background:rgba(239,35,60,0.05); border-radius:8px;
+}
+.study-correct {
+  margin-top:10px; font-size:.78rem; color:#06d6a0; font-weight:700;
+  padding:8px 12px; background:rgba(6,214,160,0.05); border-radius:8px;
+}
+
+/* ─── SUBJECT STAT CARDS ─── */
+.subject-stat {
+  position:relative; overflow:hidden;
+}
+.subject-stat .stat-icon {
+  font-size:1.5rem; display:block; margin-bottom:4px;
+}
+
+/* ─── CONFETTI ─── */
+.confetti-container {
+  position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9999;
+  overflow:hidden;
+}
+.confetti-piece {
+  position:absolute; top:-10px; width:10px; height:10px; border-radius:2px;
+  animation:confettiFall 3s ease-in forwards;
+}
+@keyframes confettiFall {
+  0% { transform:translateY(0) rotate(0deg); opacity:1; }
+  100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+}
+
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:768px) {
   .sidebar { transform:translateX(-100%); }

@@ -1,0 +1,181 @@
+const DB_CHEM = {
+  "8-sinf": {
+    label: "8-sinf",
+    tests: [
+      {
+        title: "1-Nazorat ishi",
+        topic: "Atom tuzilishi va davriy jadval",
+        questions: [
+          {q:"Atomning tarkibiy qismlari:",opts:["Proton, neytron, elektron","Faqat proton","Faqat elektron","Molekula"],a:0},
+          {q:"Protonning zaryadi:",opts:["Manfiy","Musbat","Neytral","O'zgaruvchan"],a:1},
+          {q:"Elektronning zaryadi:",opts:["Manfiy","Musbat","Neytral","O'zgaruvchan"],a:0},
+          {q:"Neytronning zaryadi:",opts:["Manfiy","Musbat","Neytral","O'zgaruvchan"],a:2},
+          {q:"Davriy jadvalning muallifi kim?",opts:["Nyuton","Mendeleev","Lavuazye","Dalton"],a:1},
+          {q:"Davriy jadvaldagi davr nima?",opts:["Gorizontal qator","Vertikal ustun","Diagonal","Doira"],a:0},
+          {q:"Davriy jadvaldagi guruh nima?",opts:["Gorizontal qator","Vertikal ustun","Diagonal","Doira"],a:1},
+          {q:"Atom raqami nima?",opts:["Protonlar soni","Neytronlar soni","Elektronlar soni","A va C to'g'ri"],a:3},
+          {q:"Massa soni (A) = ?",opts:["Protonlar + neytronlar","Protonlar + elektronlar","Faqat protonlar","Faqat neytronlar"],a:0},
+          {q:"Izotoplar nima?",opts:["Proton soni bir xil, neytron soni har xil elementlar","Element turlari","Molekulalar","Ionlar"],a:0},
+          {q:"Valentlik nima?",opts:["Atomning bog' hosil qilish qobiliyati","Atom massasi","Atom raqami","Zaryad"],a:0},
+          {q:"Kislorodning valentligi odatda:",opts:["I","II","III","IV"],a:1},
+          {q:"Vodorodning valentligi:",opts:["I","II","III","IV"],a:0},
+          {q:"Metallar davriy jadvalning qaysi qismida?",opts:["O'ng tomonida","Chap va pastki qismida","Yuqori qismida","Markazida"],a:1},
+          {q:"Metallmaslar qayerda joylashgan?",opts:["Chap tomonda","O'ng yuqori qismida","Pastki qismida","Markazda"],a:1},
+          {q:"Nodir gazlar qaysi guruhda?",opts:["I guruh","IV guruh","VII guruh","VIII guruh"],a:3},
+          {q:"Natriy (Na) atom raqami:",opts:["11","12","23","24"],a:0},
+          {q:"Kislorod (O) atom raqami:",opts:["6","8","16","32"],a:1},
+          {q:"Temir (Fe) atom raqami:",opts:["24","26","56","28"],a:1},
+          {q:"Elektron qavatlari soni = ?",opts:["Davr raqami","Guruh raqami","Atom massasi","Neytron soni"],a:0},
+        ],
+        key: ["A","B","A","C","B","A","B","D","A","A","A","B","A","B","B","D","A","B","B","A"]
+      },
+      {
+        title: "2-Nazorat ishi",
+        topic: "Kimyoviy bog'lanish va reaksiyalar",
+        questions: [
+          {q:"Kovalent bog' nima?",opts:["Elektronlar juftini bo'lishish","Elektronni berish","Ion hosil qilish","Metall bog'",""],a:0},
+          {q:"Ion bog' nima?",opts:["Elektronlar juftini bo'lishish","Elektron berish va olish natijasida hosil bo'lgan bog'","Metall bog'","Van der Vaals kuchi"],a:1},
+          {q:"NaCl dagi bog' turi:",opts:["Kovalent","Ion","Metall","Vodorod"],a:1},
+          {q:"H₂O dagi bog' turi:",opts:["Ion","Kovalent qutbli","Kovalent qutbsiz","Metall"],a:1},
+          {q:"Kimyoviy reaksiya belgilari:",opts:["Rang, gaz, cho'kma, issiqlik o'zgarishi","Faqat rang","Faqat gaz","Hech qanday"],a:0},
+          {q:"Birikish reaksiyasi:",opts:["A + B → AB","AB → A + B","AB + CD → AD + CB","A + BC → AC + B"],a:0},
+          {q:"Parchalanish reaksiyasi:",opts:["A + B → AB","AB → A + B","AB + CD → AD + CB","A + BC → AC + B"],a:1},
+          {q:"O'rin olish reaksiyasi:",opts:["A + B → AB","AB → A + B","AB + CD → AD + CB","A + BC → AC + B"],a:3},
+          {q:"Almashinish reaksiyasi:",opts:["A + B → AB","AB → A + B","AB + CD → AD + CB","A + BC → AC + B"],a:2},
+          {q:"2H₂ + O₂ → 2H₂O. Bu qanday reaksiya?",opts:["Birikish","Parchalanish","O'rin olish","Almashinish"],a:0},
+          {q:"Oksidlanish nima?",opts:["Elektron yo'qotish","Elektron olish","Neytron olish","Proton yo'qotish"],a:0},
+          {q:"Qaytarilish nima?",opts:["Elektron yo'qotish","Elektron olish","Neytron yo'qotish","Proton olish"],a:1},
+          {q:"Katalizator nima?",opts:["Reaksiyani tezlashtiruvchi modda","Reaksiya mahsuloti","Reagent","Erituvchi"],a:0},
+          {q:"Ekzotermik reaksiya:",opts:["Issiqlik ajraladi","Issiqlik yutiladi","Issiqlik o'zgarmaydi","Sovuydi"],a:0},
+          {q:"Endotermik reaksiya:",opts:["Issiqlik ajraladi","Issiqlik yutiladi","Issiqlik o'zgarmaydi","Isidi"],a:1},
+          {q:"Kimyoviy tenglama nima?",opts:["Reaksiyani formulalar bilan ifodalash","Matematik tenglama","Fizik qonun","Biologik jarayon"],a:0},
+          {q:"Moddalar saqlanish qonuni:",opts:["Reaksiyadan oldin va keyin moddalar massasi teng","Massa kamayadi","Massa ortadi","Massa o'zgaradi"],a:0},
+          {q:"Oksid nima?",opts:["Kislorod bilan birikmasi","Vodorod bilan birikmasi","Azot bilan birikmasi","Oltingugurt bilan birikmasi"],a:0},
+          {q:"Kislota nima?",opts:["Vodorod va kislota qoldig'idan iborat","Metall va kisloroddan iborat","Faqat metallardan","Faqat metallmaslardan"],a:0},
+          {q:"Asos nima?",opts:["Metall va gidroksid guruhidan iborat","Kislota va suv","Tuz va suv","Oksid va kislota"],a:0},
+        ],
+        key: ["A","B","B","B","A","A","B","D","C","A","A","B","A","A","B","A","A","A","A","A"]
+      },
+      {
+        title: "3-Nazorat ishi",
+        topic: "Kislorod, vodorod va suv",
+        questions: [
+          {q:"Kislorodning kimyoviy formulasi:",opts:["O","O₂","O₃","H₂O"],a:1},
+          {q:"Ozon formulasi:",opts:["O","O₂","O₃","H₂O"],a:2},
+          {q:"Vodorodning kimyoviy formulasi:",opts:["H","H₂","H₃","OH"],a:1},
+          {q:"Suvning kimyoviy formulasi:",opts:["HO","H₂O","H₂O₂","OH₂"],a:1},
+          {q:"Kislorod havoning necha % ini tashkil qiladi?",opts:["78%","21%","1%","50%"],a:1},
+          {q:"Azot havoning necha % ini tashkil qiladi?",opts:["78%","21%","1%","50%"],a:0},
+          {q:"Yonish uchun nima kerak?",opts:["Faqat yoqilg'i","Kislorod","Yoqilg'i, kislorod, alangalanish harorati","Faqat harorat"],a:2},
+          {q:"Vodorod eng ... gaz",opts:["Og'ir","Yengil","Rangli","Hidli"],a:1},
+          {q:"Suvning qaynash harorati:",opts:["0°C","50°C","100°C","200°C"],a:2},
+          {q:"Suvning muzlash harorati:",opts:["0°C","-10°C","10°C","100°C"],a:0},
+          {q:"Fotosintez natijasida qaysi gaz ajraladi?",opts:["CO₂","O₂","N₂","H₂"],a:1},
+          {q:"Nafas olishda qaysi gaz yutiladi?",opts:["CO₂","O₂","N₂","H₂"],a:1},
+          {q:"Nafas chiqarishda qaysi gaz ajraladi?",opts:["CO₂","O₂","N₂","H₂"],a:0},
+          {q:"Suvning elektrolizi natijasida:",opts:["H₂ va O₂ hosil bo'ladi","HCl hosil bo'ladi","NaCl hosil bo'ladi","CO₂ hosil bo'ladi"],a:0},
+          {q:"2H₂O → 2H₂ + O₂. Bu qanday reaksiya?",opts:["Birikish","Parchalanish","O'rin olish","Almashinish"],a:1},
+          {q:"Vodorod peroksid formulasi:",opts:["H₂O","H₂O₂","HO","H₃O"],a:1},
+          {q:"Kislorod qanday olinadi (laboratoriyada)?",opts:["KMnO₄ ni qizdirish","Suvni muzlatish","Azotni yoqish","Oltingugurtni eritish"],a:0},
+          {q:"Vodorod yoqilganda nima hosil bo'ladi?",opts:["CO₂","H₂O","HCl","NaOH"],a:1},
+          {q:"Suv universal erituvchimi?",opts:["Ha","Yo'q","Faqat tuzlarni eritadi","Faqat kislotalarni eritadi"],a:0},
+          {q:"pH = 7 bo'lganda muhit:",opts:["Kislotali","Ishqoriy","Neytral","Kuchli kislotali"],a:2},
+        ],
+        key: ["B","C","B","B","B","A","C","B","C","A","B","B","A","A","B","B","A","B","A","C"]
+      }
+    ]
+  },
+  "9-sinf": {
+    label: "9-sinf",
+    tests: [
+      {
+        title: "1-Nazorat ishi",
+        topic: "Metallar va metallmaslar",
+        questions: [
+          {q:"Metallarning umumiy xossalari:",opts:["Elektr va issiqlik o'tkazadi, yaltiroq","O'tkazmaydi","Gaz holda bo'ladi","Rangsiz"],a:0},
+          {q:"Eng faol metall:",opts:["Temir","Oltin","Frantsiy (Fr)","Mis"],a:2},
+          {q:"Eng kam faol metall:",opts:["Natriy","Oltin (Au)","Kaliy","Alyuminiy"],a:1},
+          {q:"Metallarning elektrokimyoviy kuchlanishlar qatori:",opts:["Li, K, Na, ... Cu, Ag, Au","Au, Ag, Cu, ... Na, K, Li","Tasodifiy","Alifbo tartibida"],a:0},
+          {q:"Korroziya nima?",opts:["Metallarning atrof muhit ta'sirida buzilishi","Metallarning eritilishi","Metallarning qizdirilishi","Metallarning sovutilishi"],a:0},
+          {q:"Fe + CuSO₄ → ? + FeSO₄",opts:["Cu","Ag","Au","Zn"],a:0},
+          {q:"Alyuminiy oksid formulasi:",opts:["AlO","Al₂O₃","AlO₃","Al₃O₂"],a:1},
+          {q:"Natriy gidroksid formulasi:",opts:["NaO","NaOH","Na₂O","NaH"],a:1},
+          {q:"Galogenlar qaysi guruhda?",opts:["I","IV","VII","VIII"],a:2},
+          {q:"Xlor (Cl₂) qanday gaz?",opts:["Rangsiz, hidsiz","Sariq-yashil, o'tkir hidli","Moviy, hidsiz","Qizil, yoqimli hidli"],a:1},
+          {q:"Oltingugurt (S) qaysi guruhda?",opts:["IV","V","VI","VII"],a:2},
+          {q:"Azotning valentligi:",opts:["Faqat III","I, II, III, IV, V","Faqat V","Faqat I"],a:1},
+          {q:"Fosfor (P) valentligi:",opts:["I","II","III va V","Faqat VII"],a:2},
+          {q:"Uglerod (C) valentligi:",opts:["I","II va IV","Faqat III","Faqat V"],a:1},
+          {q:"Kremniy (Si) qanday element?",opts:["Metall","Metallmas","Yarim o'tkazgich","Nodir gaz"],a:2},
+          {q:"Olmosning kimyoviy formulasi:",opts:["SiO₂","C","Fe","Al"],a:1},
+          {q:"Grafit va olmos:",opts:["Turli elementlar","Uglerodni allotropik shakllari","Metall va metallmas","Birikmalar"],a:1},
+          {q:"CO₂ nima?",opts:["Uglerod oksidi","Uglerod dioksid","Karbonat kislota","Uglevodorod"],a:1},
+          {q:"NH₃ nima?",opts:["Ammiak","Azot oksidi","Nitrat kislota","Azot"],a:0},
+          {q:"H₂SO₄ nima?",opts:["Xlorid kislota","Sulfit kislota","Sulfat kislota","Nitrat kislota"],a:2},
+        ],
+        key: ["A","C","B","A","A","A","B","B","C","B","C","B","C","B","C","B","B","B","A","C"]
+      },
+      {
+        title: "2-Nazorat ishi",
+        topic: "Eritmalar va elektrolitik dissotsiatsiya",
+        questions: [
+          {q:"Eritma nima?",opts:["Bir jinsli aralashma","Bir jinsli bo'lmagan aralashma","Sof modda","Element"],a:0},
+          {q:"To'yingan eritma:",opts:["Modda endi erimaydi","Modda hali eriydi","Suv yo'q","Faqat gaz"],a:0},
+          {q:"To'yinmagan eritma:",opts:["Modda endi erimaydi","Modda hali eriydi","Cho'kma bor","Faqat qattiq"],a:1},
+          {q:"Eritmaning massa ulushi formulasi: ω = ?",opts:["m_modda/m_eritma × 100%","m_eritma/m_modda","m_suv/m_modda","m_modda + m_suv"],a:0},
+          {q:"Elektrolitik dissotsiatsiya nima?",opts:["Elektrolitning suvda ionlarga ajralishi","Metallarning eishi","Gazlarning siqilishi","Suyuqliklarning qaynashi"],a:0},
+          {q:"Kuchli elektrolit:",opts:["NaCl","Shakar","Spirt","Yog'"],a:0},
+          {q:"Kuchsiz elektrolit:",opts:["NaOH","HCl","H₂O","KCl"],a:2},
+          {q:"Kislota suvda dissotsilanganda nima beradi?",opts:["H⁺ ionlari","OH⁻ ionlari","Neytral zarralar","Elektronlar"],a:0},
+          {q:"Ishqor suvda dissotsilanganda nima beradi?",opts:["H⁺ ionlari","OH⁻ ionlari","Neytral zarralar","Elektronlar"],a:1},
+          {q:"pH < 7 bo'lganda muhit:",opts:["Neytral","Ishqoriy","Kislotali","Noma'lum"],a:2},
+          {q:"pH > 7 bo'lganda muhit:",opts:["Neytral","Ishqoriy","Kislotali","Noma'lum"],a:1},
+          {q:"Neytrallash reaksiyasi:",opts:["Kislota + ishqor → tuz + suv","Metall + kislota","Oksid + suv","Tuz + tuz"],a:0},
+          {q:"NaCl → Na⁺ + Cl⁻. Bu:",opts:["Dissotsiatsiya","Sintez","Fotosintez","Polimerlanish"],a:0},
+          {q:"Tuz nima?",opts:["Metall ioni va kislota qoldig'idan iborat","Faqat metallar","Faqat metallmaslar","Faqat gazlar"],a:0},
+          {q:"Indikator nima?",opts:["Muhitni aniqlash uchun modda","Katalizator","Inhibitor","Erituvchi"],a:0},
+          {q:"Lakmus kislotali muhitda qanday rang?",opts:["Ko'k","Qizil","Yashil","Sariq"],a:1},
+          {q:"Fenolftalein ishqoriy muhitda:",opts:["Rangsiz","Pushti-qizil","Ko'k","Sariq"],a:1},
+          {q:"Molyar konsentratsiya formulasi: C = ?",opts:["n/V","m/V","n×V","m×n"],a:0},
+          {q:"1 mol = ? ta zarracha (Avogadro soni)",opts:["6.02 × 10²³","3.14 × 10⁸","1.6 × 10⁻¹⁹","9.8 × 10⁰"],a:0},
+          {q:"Molyar massa birkligi:",opts:["g","g/mol","mol","kg"],a:1},
+        ],
+        key: ["A","A","B","A","A","A","C","A","B","C","B","A","A","A","A","B","B","A","A","B"]
+      }
+    ]
+  },
+  "10-sinf": {
+    label: "10-sinf",
+    tests: [
+      {
+        title: "1-Nazorat ishi",
+        topic: "Organik kimyo asoslari",
+        questions: [
+          {q:"Organik kimyo nimani o'rganadi?",opts:["Uglerod birikmalarini","Metallarni","Nodir gazlarni","Kislotalarni"],a:0},
+          {q:"Uglerodning valentligi organik birikmalarda:",opts:["II","III","IV","V"],a:2},
+          {q:"Metan formulasi:",opts:["CH₄","C₂H₆","C₂H₄","C₂H₂"],a:0},
+          {q:"Etan formulasi:",opts:["CH₄","C₂H₆","C₂H₄","C₂H₂"],a:1},
+          {q:"Etilen formulasi:",opts:["CH₄","C₂H₆","C₂H₄","C₂H₂"],a:2},
+          {q:"Asetilen formulasi:",opts:["CH₄","C₂H₆","C₂H₄","C₂H₂"],a:3},
+          {q:"Alkanlar umumiy formulasi:",opts:["CₙH₂ₙ₊₂","CₙH₂ₙ","CₙH₂ₙ₋₂","CₙHₙ"],a:0},
+          {q:"Alkenlar umumiy formulasi:",opts:["CₙH₂ₙ₊₂","CₙH₂ₙ","CₙH₂ₙ₋₂","CₙHₙ"],a:1},
+          {q:"Alkinlar umumiy formulasi:",opts:["CₙH₂ₙ₊₂","CₙH₂ₙ","CₙH₂ₙ₋₂","CₙHₙ"],a:2},
+          {q:"Benzol formulasi:",opts:["C₆H₆","C₆H₁₂","C₆H₁₄","C₆H₅OH"],a:0},
+          {q:"Spirtlar funksional guruhi:",opts:["-COOH","-OH","-NH₂","-CHO"],a:1},
+          {q:"Kislotalar funksional guruhi:",opts:["-COOH","-OH","-NH₂","-CHO"],a:0},
+          {q:"Aldegidlar funksional guruhi:",opts:["-COOH","-OH","-NH₂","-CHO"],a:3},
+          {q:"Aminlar funksional guruhi:",opts:["-COOH","-OH","-NH₂","-CHO"],a:2},
+          {q:"Etanol formulasi:",opts:["CH₃OH","C₂H₅OH","C₃H₇OH","C₄H₉OH"],a:1},
+          {q:"Sirka kislota formulasi:",opts:["HCl","H₂SO₄","CH₃COOH","HCOOH"],a:2},
+          {q:"Polimer nima?",opts:["Takrorlanuvchi bo'laklardan tashkil topgan katta molekula","Kichik molekula","Atom","Ion"],a:0},
+          {q:"Izomeriya nima?",opts:["Bir xil formulali, turli tuzilishli moddalar","Bir xil moddalar","Turli elementlar","Aralashmalar"],a:0},
+          {q:"Gomologik qator nima?",opts:["CH₂ farqi bilan ketma-ket keluvchi moddalar","Izomerlar","Allotroplar","Kristallar"],a:0},
+          {q:"Neft qaysi moddalarning aralashmasi?",opts:["Uglevodorodlar","Metallar","Tuzlar","Kislotalar"],a:0},
+        ],
+        key: ["A","C","A","B","C","D","A","B","C","A","B","A","D","C","B","C","A","A","A","A"]
+      }
+    ]
+  }
+};
+
+module.exports = DB_CHEM;

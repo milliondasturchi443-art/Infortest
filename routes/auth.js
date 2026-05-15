@@ -159,14 +159,33 @@ function checkAchievements(user) {
   if (user.totalTests >= 10) achs.add('test_10');
   if (user.totalTests >= 25) achs.add('test_25');
   if (user.totalQuestions > 0 && (user.totalCorrect / user.totalQuestions) >= 0.9) achs.add('genius');
-  if (user.totalQuestions > 0 && (user.totalCorrect / user.totalQuestions) === 1) achs.add('perfect');
 
   const results = {};
   if (user.results) user.results.forEach((v, k) => { results[k] = v; });
-  const passed = Object.values(results).filter((p) => p >= 70).length;
+  const allPcts = Object.values(results);
+  if (allPcts.some((p) => p === 100)) achs.add('perfect');
+  const passed = allPcts.filter((p) => p >= 70).length;
   if (passed >= 5) achs.add('pass_5');
   if (passed >= 10) achs.add('pass_10');
   if (passed >= 24) achs.add('master');
+
+  // Streak achievements
+  if ((user.streak || 0) >= 3) achs.add('streak_3');
+  if ((user.streak || 0) >= 7) achs.add('streak_7');
+
+  // Level achievements
+  if ((user.level || 1) >= 5) achs.add('level_5');
+  if ((user.level || 1) >= 10) achs.add('level_10');
+
+  // Multi-subject: check if user has results in 3+ different subjects
+  const subjects = new Set();
+  Object.keys(results).forEach((key) => {
+    const subj = key.split('_')[0];
+    if (['informatika', 'matematika', 'fizika', 'kimyo'].includes(subj)) {
+      subjects.add(subj);
+    }
+  });
+  if (subjects.size >= 3) achs.add('multi_subject');
 
   user.achievements = Array.from(achs);
 }

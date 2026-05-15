@@ -4,11 +4,31 @@ var DB = {};
 var currentUser = null;
 var selectedSinf = null;
 var selectedTestIdx = null;
+var selectedSubject = 'informatika';
 var questions = [];
 var qIndex = 0;
 var score = 0;
 var answered = false;
 var userAnswers = [];
+var quizTimer = null;
+var quizTimeLeft = 0;
+var quizTotalTime = 0;
+var studyModeActive = false;
+var lastCorrectAnswers = [];
+
+var SUBJECT_NAMES = {
+  informatika: 'Informatika',
+  matematika: 'Matematika',
+  fizika: 'Fizika',
+  kimyo: 'Kimyo',
+};
+
+var SUBJECT_ICONS = {
+  informatika: '💻',
+  matematika: '📐',
+  fizika: '🔬',
+  kimyo: '🧪',
+};
 
 var ACCENT_COLORS = [
   { name: 'Ko\'k', value: '#4361ee' },
@@ -30,13 +50,27 @@ var ALL_ACHIEVEMENTS = [
   { id: 'pass_10', icon: '🌟', name: 'Super yulduz', desc: '10 ta testdan o\'tish (70%+)' },
   { id: 'genius', icon: '🧠', name: 'Daho', desc: 'O\'rtacha 90%+ natija' },
   { id: 'perfect', icon: '👑', name: 'Mukammal', desc: '100% natija olish' },
-  { id: 'master', icon: '🏅', name: 'Usta', desc: 'Barcha 24 testdan o\'tish' },
+  { id: 'master', icon: '🏅', name: 'Usta', desc: 'Barcha testlardan o\'tish' },
+  { id: 'streak_3', icon: '🔥', name: '3 kunlik streak', desc: '3 kun ketma-ket test topshirish' },
+  { id: 'streak_7', icon: '💎', name: 'Haftalik streak', desc: '7 kun ketma-ket test topshirish' },
+  { id: 'multi_subject', icon: '🌈', name: 'Ko\'p fanli', desc: '3 xil fandan test topshirish' },
+  { id: 'level_5', icon: '🚀', name: 'Tajribali', desc: '5-darajaga yetish' },
+  { id: 'level_10', icon: '🏆', name: 'Professori', desc: '10-darajaga yetish' },
 ];
+
+async function loadSubjectQuestions(subject) {
+  try {
+    var res = await fetch(API + '/api/quiz/questions?subject=' + subject);
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to load questions for ' + subject + ':', err);
+    return {};
+  }
+}
 
 (async function init() {
   try {
-    var res = await fetch(API + '/api/quiz/questions');
-    DB = await res.json();
+    DB = await loadSubjectQuestions('informatika');
   } catch (err) {
     console.error('Failed to load questions:', err);
   }
@@ -165,6 +199,7 @@ var TAB_TITLES = {
   profile: '\uD83D\uDC64 Profil',
   settings: '\uD83C\uDFA8 Sozlamalar',
   achievements: '\uD83C\uDFC6 Yutuqlar',
+  daily: '\uD83C\uDF1F Kunlik vazifa',
   admin: '\u2699\uFE0F Admin',
 };
 
@@ -184,9 +219,62 @@ function refreshDashboard() {
   } else {
     adminTab.style.display = 'none';
   }
+
+  // Update XP/Level/Streak display
+  var xpEl = document.getElementById('sidebarXP');
+  if (xpEl) {
+    var level = currentUser.level || 1;
+    var xp = currentUser.xp || 0;
+    var nextLevelXP = level * 100;
+    var currentLevelXP = xp - ((level - 1) * 100);
+    xpEl.innerHTML = '<div class="xp-badge">' +
+      '<span class="xp-level">Lv.' + level + '</span>' +
+      '<div class="xp-bar"><div class="xp-fill" style="width:' + Math.min((currentLevelXP / 100) * 100, 100) + '%"></div></div>' +
+      '<span class="xp-text">' + xp + ' XP</span>' +
+      '</div>';
+  }
+  var streakEl = document.getElementById('sidebarStreak');
+  if (streakEl) {
+    var streak = currentUser.streak || 0;
+    streakEl.innerHTML = streak > 0 ? '<span class="streak-badge">\uD83D\uDD25 ' + streak + ' kun streak</span>' : '';
+  }
+
+  updateSubjectCards();
   updateProfileTab();
   updateStatsTab();
   initSettingsTab();
+  loadDailyChallenge();
+}
+
+async function updateSubjectCards() {
+  try {
+    var res = await fetch(API + '/api/quiz/subjects');
+    var data = await res.json();
+    var grid = document.getElementById('subjectGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    var subjects = [
+      { key: 'informatika', icon: '\uD83D\uDCBB', color: '#4361ee' },
+      { key: 'matematika', icon: '\uD83D\uDCD0', color: '#7209b7' },
+      { key: 'fizika', icon: '\uD83D\uDD2C', color: '#f72585' },
+      { key: 'kimyo', icon: '\uD83E\uDDEA', color: '#06d6a0' },
+    ];
+
+    subjects.forEach(function (s) {
+      var info = data[s.key];
+      var div = document.createElement('div');
+      div.className = 'subject-card';
+      div.style.borderColor = s.color;
+      div.innerHTML = '<div class="subj-icon">' + s.icon + '</div>' +
+        '<div class="subj-name">' + SUBJECT_NAMES[s.key] + '</div>' +
+        '<div class="subj-desc">' + (info ? info.grades.join(', ') + ' | ' + info.totalTests + ' ta test' : '') + '</div>';
+      div.onclick = function () { selectSubject(s.key); };
+      grid.appendChild(div);
+    });
+  } catch (err) {
+    console.error('Subject cards error:', err);
+  }
 }
 
 function showDashTab(tab, el) {
@@ -207,8 +295,8 @@ function showDashTab(tab, el) {
   if (tab === 'settings') initSettingsTab();
   if (tab === 'achievements') renderAchievements();
   if (tab === 'history') renderHistory();
+  if (tab === 'daily') loadDailyChallenge();
 
-  // Close sidebar on mobile
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('open');
@@ -220,11 +308,49 @@ function toggleSidebar() {
   document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
-function selectSubject(subject) {
-  if (subject === 'informatika') {
-    buildSinfGrid();
-    showScreen('sinfScreen');
+async function selectSubject(subject) {
+  selectedSubject = subject;
+  DB = await loadSubjectQuestions(subject);
+  document.getElementById('sinfScreenTitle').textContent = SUBJECT_NAMES[subject] + ' — sinfingizni tanlang';
+  buildSinfGrid();
+  showScreen('sinfScreen');
+}
+
+// ═══════ DAILY CHALLENGE ═══════
+async function loadDailyChallenge() {
+  var container = document.getElementById('dailyChallengeContent');
+  if (!container) return;
+  try {
+    var res = await fetch(API + '/api/quiz/daily-challenge');
+    var data = await res.json();
+    container.innerHTML = '<div class="daily-card">' +
+      '<div class="daily-icon">\uD83C\uDF1F</div>' +
+      '<h3>Bugungi vazifa</h3>' +
+      '<div class="daily-info">' +
+      '<div class="daily-subject"><span class="daily-label">Fan:</span> ' + SUBJECT_NAMES[data.subject] + ' ' + SUBJECT_ICONS[data.subject] + '</div>' +
+      '<div class="daily-sinf"><span class="daily-label">Sinf:</span> ' + data.sinf + '</div>' +
+      '<div class="daily-topic"><span class="daily-label">Mavzu:</span> ' + data.topic + '</div>' +
+      '<div class="daily-questions"><span class="daily-label">Savollar:</span> ' + data.totalQuestions + ' ta</div>' +
+      '<div class="daily-bonus">\uD83C\uDF81 Bonus: +' + data.bonusXP + ' XP</div>' +
+      '</div>' +
+      '<button class="btn btn-primary" onclick="startDailyChallenge(\'' + data.subject + '\',\'' + data.sinf + '\',' + data.testIdx + ')">Vazifani boshlash \u2192</button>' +
+      '</div>';
+  } catch (err) {
+    container.innerHTML = '<p style="text-align:center;color:var(--muted)">Yuklanmadi</p>';
   }
+}
+
+async function startDailyChallenge(subject, sinf, testIdx) {
+  selectedSubject = subject;
+  DB = await loadSubjectQuestions(subject);
+  selectedSinf = sinf;
+  selectedTestIdx = testIdx;
+  var t = DB[sinf].tests[testIdx];
+  document.getElementById('introTitle').textContent = '\uD83C\uDF1F Kunlik vazifa — ' + t.title;
+  document.getElementById('introDesc').textContent = SUBJECT_NAMES[subject] + ' | ' + sinf + '\nJami ' + t.questions.length + " ta savol.\n\nBonus: +25 XP!";
+  var prevEl = document.getElementById('introPrev');
+  prevEl.innerHTML = '';
+  showScreen('introScreen');
 }
 
 // ═══════ PROFILE ═══════
@@ -245,6 +371,14 @@ function updateProfileTab() {
   document.getElementById('profCorrect').textContent = currentUser.totalCorrect || 0;
   var avg = currentUser.totalQuestions > 0 ? Math.round((currentUser.totalCorrect / currentUser.totalQuestions) * 100) : 0;
   document.getElementById('profAvg').textContent = avg + '%';
+
+  // XP & Level in profile
+  var profLevel = document.getElementById('profLevel');
+  var profXP = document.getElementById('profXP');
+  var profStreak = document.getElementById('profStreak');
+  if (profLevel) profLevel.textContent = currentUser.level || 1;
+  if (profXP) profXP.textContent = (currentUser.xp || 0) + ' XP';
+  if (profStreak) profStreak.textContent = (currentUser.streak || 0) + ' kun';
 }
 
 function toggleEditProfile() {
@@ -428,10 +562,12 @@ function renderHistory() {
     var pass = h.pct >= 70;
     var d = new Date(h.date);
     var dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var subjectName = SUBJECT_NAMES[h.subject] || SUBJECT_NAMES.informatika;
+    var subjectIcon = SUBJECT_ICONS[h.subject] || SUBJECT_ICONS.informatika;
     var div = document.createElement('div');
     div.className = 'history-item';
     div.innerHTML = '<div class="hi-info">' +
-      '<div class="hi-title">' + h.sinf + ' — ' + h.testTitle + '</div>' +
+      '<div class="hi-title">' + subjectIcon + ' ' + subjectName + ' | ' + h.sinf + ' — ' + h.testTitle + '</div>' +
       '<div class="hi-meta">' + h.topic + ' | ' + dateStr + '</div>' +
       '</div>' +
       '<div class="hi-pct ' + (pass ? 'pass' : 'fail') + '">' + h.pct + '%</div>';
@@ -447,6 +583,32 @@ function updateStatsTab() {
   var avg = currentUser.totalQuestions > 0 ? Math.round((currentUser.totalCorrect / currentUser.totalQuestions) * 100) : 0;
   document.getElementById('myAvg').textContent = avg + '%';
 
+  // Subject-specific stats
+  var subjectStats = {};
+  var history = currentUser.testHistory || [];
+  history.forEach(function (h) {
+    var subj = h.subject || 'informatika';
+    if (!subjectStats[subj]) subjectStats[subj] = { tests: 0, correct: 0, total: 0 };
+    subjectStats[subj].tests++;
+    subjectStats[subj].correct += h.score;
+    subjectStats[subj].total += h.total;
+  });
+
+  var subjStatsEl = document.getElementById('subjectStatsGrid');
+  if (subjStatsEl) {
+    var html = '';
+    Object.keys(SUBJECT_NAMES).forEach(function (key) {
+      var s = subjectStats[key] || { tests: 0, correct: 0, total: 0 };
+      var pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+      html += '<div class="stat-card subject-stat">' +
+        '<span class="stat-icon">' + SUBJECT_ICONS[key] + '</span>' +
+        '<span class="val">' + pct + '%</span>' +
+        '<span class="lbl">' + SUBJECT_NAMES[key] + ' (' + s.tests + ' test)</span>' +
+        '</div>';
+    });
+    subjStatsEl.innerHTML = html;
+  }
+
   var list = document.getElementById('myResultsList');
   list.innerHTML = '';
   if (currentUser.results) {
@@ -457,15 +619,10 @@ function updateStatsTab() {
     }
     keys.forEach(function (key) {
       var pct = currentUser.results[key];
-      var parts = key.split('_');
-      var sinf = parts[0];
-      var testIdx = parseInt(parts[1]);
-      var testInfo = DB[sinf] && DB[sinf].tests[testIdx];
-      var title = testInfo ? sinf + ' \u2014 ' + testInfo.title : key;
       var pass = pct >= 70;
       var div = document.createElement('div');
       div.className = 'prev-box ' + (pass ? 'pass' : 'fail');
-      div.innerHTML = '<strong>' + title + '</strong>: ' + pct + '% \u2014 ' + (pass ? "\u2713 O'tgan" : "\u2717 O'tmagan");
+      div.innerHTML = '<strong>' + key + '</strong>: ' + pct + '% \u2014 ' + (pass ? "\u2713 O'tgan" : "\u2717 O'tmagan");
       list.appendChild(div);
     });
   }
@@ -482,7 +639,7 @@ async function loadLeaderboard() {
       container.innerHTML = '<p style="text-align:center;color:var(--muted)">Hali hech kim test topshirmadi</p>';
       return;
     }
-    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Testlar</th><th>Natija</th></tr></thead><tbody>';
+    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th></tr></thead><tbody>';
     data.forEach(function (u) {
       var rankClass = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
       var medal = u.rank === 1 ? '\uD83E\uDD47' : u.rank === 2 ? '\uD83E\uDD48' : u.rank === 3 ? '\uD83E\uDD49' : u.rank;
@@ -490,6 +647,8 @@ async function loadLeaderboard() {
       html += '<td><span class="lb-rank ' + rankClass + '">' + medal + '</span></td>';
       html += '<td>' + u.name + '</td>';
       html += '<td><span class="lb-school">' + (u.school || '\u2014') + '</span></td>';
+      html += '<td><span class="lb-level">' + (u.level || 1) + '</span></td>';
+      html += '<td>' + (u.streak > 0 ? '\uD83D\uDD25' + u.streak : '\u2014') + '</td>';
       html += '<td>' + u.totalTests + '</td>';
       html += '<td><strong>' + u.avgPct + '%</strong></td>';
       html += '</tr>';
@@ -585,7 +744,7 @@ async function deleteUser(userId) {
 
 // ═══════ SINF GRID ═══════
 function buildSinfGrid() {
-  document.getElementById('sinfGreet').textContent = 'Salom, ' + currentUser.name + '!';
+  document.getElementById('sinfGreet').textContent = SUBJECT_ICONS[selectedSubject] + ' ' + SUBJECT_NAMES[selectedSubject];
   var grid = document.getElementById('sinfGrid');
   grid.innerHTML = '';
   Object.keys(DB).forEach(function (key) {
@@ -600,7 +759,7 @@ function buildSinfGrid() {
 function selectSinf(sinfKey) {
   selectedSinf = sinfKey;
   var sinf = DB[sinfKey];
-  document.getElementById('bc1').textContent = sinf.label;
+  document.getElementById('bc1').textContent = SUBJECT_NAMES[selectedSubject] + ' > ' + sinf.label;
   document.getElementById('nazTitle').textContent = sinf.label + ' \u2014 nazorat ishini tanlang';
 
   var grid = document.getElementById('nazGrid');
@@ -608,7 +767,7 @@ function selectSinf(sinfKey) {
   sinf.tests.forEach(function (t, i) {
     var btn = document.createElement('div');
     btn.className = 'naz-btn';
-    var key = sinfKey + '_' + i;
+    var key = selectedSubject + '_' + sinfKey + '_' + i;
     var prev = currentUser.results[key];
     var prevHtml = '';
     if (prev != null) {
@@ -625,10 +784,10 @@ function selectTest(idx) {
   selectedTestIdx = idx;
   var t = DB[selectedSinf].tests[idx];
   var total = t.questions.length;
-  document.getElementById('introTitle').textContent = t.title + ' \u2014 Testga tayyormisiz?';
-  document.getElementById('introDesc').textContent = 'Jami ' + total + " ta savol. Savollar tasodifiy tartibda beriladi. Orqaga qaytib bo'lmaydi.\n\nSertifikat olish uchun 70% yoki undan yuqori natija kerak.";
+  document.getElementById('introTitle').textContent = SUBJECT_NAMES[selectedSubject] + ' | ' + t.title + ' \u2014 Testga tayyormisiz?';
+  document.getElementById('introDesc').textContent = 'Jami ' + total + " ta savol. Har savol uchun 30 soniya vaqt beriladi.\n\nSertifikat olish uchun 70% yoki undan yuqori natija kerak.";
 
-  var key = selectedSinf + '_' + idx;
+  var key = selectedSubject + '_' + selectedSinf + '_' + idx;
   var prev = currentUser.results[key];
   var prevEl = document.getElementById('introPrev');
   if (prev != null) {
@@ -650,6 +809,8 @@ function shuffle(arr) {
 }
 
 function startQuiz() {
+  studyModeActive = false;
+  lastCorrectAnswers = [];
   var t = DB[selectedSinf].tests[selectedTestIdx];
   var originalQuestions = t.questions;
   var indices = [];
@@ -663,8 +824,49 @@ function startQuiz() {
   for (var j = 0; j < userAnswers.length; j++) userAnswers[j] = -1;
   document.getElementById('qTotal').textContent = questions.length;
   document.getElementById('userBadge').textContent = currentUser.name;
+  document.getElementById('quizSubjectBadge').textContent = SUBJECT_ICONS[selectedSubject] + ' ' + SUBJECT_NAMES[selectedSubject];
   showScreen('quizScreen');
   renderQuestion();
+}
+
+function startTimer() {
+  if (quizTimer) clearInterval(quizTimer);
+  quizTimeLeft = 30;
+  quizTotalTime = 30;
+  updateTimerDisplay();
+  quizTimer = setInterval(function () {
+    quizTimeLeft--;
+    updateTimerDisplay();
+    if (quizTimeLeft <= 0) {
+      clearInterval(quizTimer);
+      if (!answered) {
+        autoSkip();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  var timerEl = document.getElementById('quizTimer');
+  if (timerEl) {
+    var pct = (quizTimeLeft / quizTotalTime) * 100;
+    var color = quizTimeLeft <= 5 ? '#ef233c' : quizTimeLeft <= 10 ? '#f8961e' : '#06d6a0';
+    timerEl.innerHTML = '<div class="timer-ring" style="--pct:' + pct + '%;--timer-color:' + color + '">' +
+      '<span class="timer-num">' + quizTimeLeft + '</span>' +
+      '</div>';
+  }
+}
+
+function autoSkip() {
+  answered = true;
+  var q = questions[qIndex];
+  userAnswers[q.origIdx] = -1;
+  var cont = document.getElementById('optionsContainer');
+  var btns = cont.querySelectorAll('.option');
+  btns.forEach(function (b) { b.disabled = true; });
+  var nb = document.getElementById('nextBtn');
+  nb.textContent = qIndex + 1 < questions.length ? 'Keyingi savol \u2192' : 'Testni yakunlash \u2192';
+  nb.style.display = 'block';
 }
 
 function renderQuestion() {
@@ -686,11 +888,14 @@ function renderQuestion() {
     btn.onclick = function () { selectAnswer(i, cont); };
     cont.appendChild(btn);
   });
+
+  startTimer();
 }
 
 function selectAnswer(chosen, cont) {
   if (answered) return;
   answered = true;
+  if (quizTimer) clearInterval(quizTimer);
   var q = questions[qIndex];
   userAnswers[q.origIdx] = chosen;
   var btns = cont.querySelectorAll('.option');
@@ -711,35 +916,39 @@ function nextQuestion() {
 }
 
 async function submitQuiz() {
+  if (quizTimer) clearInterval(quizTimer);
   try {
     var res = await fetch(API + '/api/quiz/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: currentUser.id, sinf: selectedSinf, testIdx: selectedTestIdx, answers: userAnswers }),
+      body: JSON.stringify({ userId: currentUser.id, sinf: selectedSinf, testIdx: selectedTestIdx, answers: userAnswers, subject: selectedSubject }),
     });
     var data = await res.json();
     if (!res.ok) { alert(data.error || 'Xatolik yuz berdi'); return; }
     score = data.score;
+    lastCorrectAnswers = data.correctAnswers || [];
     currentUser.results[data.key] = data.pct;
     currentUser.totalTests = (currentUser.totalTests || 0) + 1;
     currentUser.totalCorrect = (currentUser.totalCorrect || 0) + data.score;
     currentUser.totalQuestions = (currentUser.totalQuestions || 0) + data.total;
+    currentUser.xp = data.xp || currentUser.xp;
+    currentUser.level = data.level || currentUser.level;
+    currentUser.streak = data.streak || currentUser.streak;
     var t = DB[selectedSinf].tests[selectedTestIdx];
     if (!currentUser.testHistory) currentUser.testHistory = [];
-    currentUser.testHistory.push({ sinf: selectedSinf, testIdx: selectedTestIdx, testTitle: t.title, topic: t.topic, score: data.score, total: data.total, pct: data.pct, date: new Date().toISOString() });
-    // Refresh user to get updated achievements
+    currentUser.testHistory.push({ sinf: selectedSinf, testIdx: selectedTestIdx, testTitle: t.title, topic: t.topic, subject: selectedSubject, score: data.score, total: data.total, pct: data.pct, date: new Date().toISOString() });
     try {
       var pRes = await fetch(API + '/api/auth/profile/' + currentUser.id);
       var pData = await pRes.json();
       if (pRes.ok) currentUser = pData;
     } catch (e) {}
-    showResult(data.score, data.total, data.pct);
+    showResult(data.score, data.total, data.pct, data.xpEarned, data.streak);
   } catch (err) {
     alert('Server bilan aloqa xatosi.');
   }
 }
 
-function showResult(sc, total, pct) {
+function showResult(sc, total, pct, xpEarned, streak) {
   var pass = pct >= 70;
   document.getElementById('resultPct').textContent = pct + '%';
   document.getElementById('statC').textContent = sc;
@@ -751,13 +960,91 @@ function showResult(sc, total, pct) {
     ? "Ajoyib natija! " + total + " ta savoldan " + sc + " tasiga to'g'ri javob berdingiz."
     : "70% kerak, sizda " + pct + "% bo'ldi. Yana bir bor urinib ko'ring!";
 
+  // XP & streak info
+  var xpInfo = document.getElementById('resultXPInfo');
+  if (xpInfo) {
+    xpInfo.innerHTML = '<div class="result-badges">' +
+      '<span class="result-xp">+' + (xpEarned || 0) + ' XP</span>' +
+      '<span class="result-level">Lv.' + (currentUser.level || 1) + '</span>' +
+      (streak > 1 ? '<span class="result-streak">\uD83D\uDD25 ' + streak + ' kun streak!</span>' : '') +
+      '</div>';
+  }
+
+  // Study mode button
+  var studyBtn = document.getElementById('studyModeBtn');
+  if (studyBtn) {
+    studyBtn.style.display = 'block';
+  }
+
   var cs = document.getElementById('certSection');
   if (pass) {
     cs.style.display = 'block';
     var t = DB[selectedSinf].tests[selectedTestIdx];
     generateCertificate(currentUser.name, pct, selectedSinf, t.title, t.topic);
+    // Confetti effect
+    launchConfetti();
   } else { cs.style.display = 'none'; }
   showScreen('resultScreen');
+}
+
+// ═══════ STUDY MODE ═══════
+function enterStudyMode() {
+  studyModeActive = true;
+  var t = DB[selectedSinf].tests[selectedTestIdx];
+  var container = document.getElementById('studyModeContent');
+  if (!container) return;
+
+  var html = '<h3>\uD83D\uDCDA ' + SUBJECT_NAMES[selectedSubject] + ' | ' + t.title + ' — Javoblarni ko\'rish</h3>';
+  html += '<p class="section-desc">' + t.topic + '</p>';
+
+  t.questions.forEach(function (q, i) {
+    var letters = ['A', 'B', 'C', 'D'];
+    var userAns = (userAnswers && userAnswers[i] !== undefined) ? userAnswers[i] : -1;
+    var correctAns = lastCorrectAnswers[i] ? lastCorrectAnswers[i].correct : q.a;
+    var isCorrect = userAns === correctAns;
+
+    html += '<div class="study-question ' + (isCorrect ? 'correct' : 'wrong') + '">';
+    html += '<div class="study-q-num">' + (i + 1) + '. ' + q.q + '</div>';
+    html += '<div class="study-opts">';
+    q.opts.forEach(function (opt, j) {
+      var cls = 'study-opt';
+      if (j === correctAns) cls += ' correct-opt';
+      if (j === userAns && !isCorrect) cls += ' wrong-opt';
+      html += '<div class="' + cls + '">' + letters[j] + ') ' + opt + '</div>';
+    });
+    html += '</div>';
+    if (!isCorrect) {
+      html += '<div class="study-explanation">\u2717 Sizning javobingiz: ' + (userAns >= 0 ? letters[userAns] : 'Javob berilmagan') + ' | \u2713 To\'g\'ri javob: ' + letters[correctAns] + '</div>';
+    } else {
+      html += '<div class="study-correct">\u2713 To\'g\'ri!</div>';
+    }
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+  showScreen('studyScreen');
+}
+
+// ═══════ CONFETTI ═══════
+function launchConfetti() {
+  var colors = ['#4361ee', '#f72585', '#7209b7', '#06d6a0', '#f8961e', '#ef233c'];
+  var container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+
+  for (var i = 0; i < 50; i++) {
+    var piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = Math.random() * 2 + 's';
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    container.appendChild(piece);
+  }
+
+  setTimeout(function () {
+    container.remove();
+  }, 5000);
 }
 
 function goToNaz() { showScreen('nazScreen'); selectSinf(selectedSinf); }
@@ -799,10 +1086,11 @@ function generateCertificate(name, pct, sinf, testTitle, topic) {
   ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.fillText('\uD83C\uDFC6', W / 2, 110);
   ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = 'bold 13px Nunito, sans-serif'; ctx.letterSpacing = '5px'; ctx.fillText('SERTIFIKAT', W / 2, 150);
 
+  var subjectName = SUBJECT_NAMES[selectedSubject] || 'Informatika';
   var tGrad = ctx.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
   tGrad.addColorStop(0, '#4361ee'); tGrad.addColorStop(1, '#f72585');
-  ctx.fillStyle = tGrad; ctx.font = 'bold 30px Georgia,serif'; ctx.letterSpacing = '0px';
-  ctx.fillText("INFORMATIKA BO'YICHA TESTNI TOPSHIRGANLIK HAQIDA", W / 2, 190);
+  ctx.fillStyle = tGrad; ctx.font = 'bold 28px Georgia,serif'; ctx.letterSpacing = '0px';
+  ctx.fillText(subjectName.toUpperCase() + " BO'YICHA TESTNI TOPSHIRGANLIK HAQIDA", W / 2, 190);
 
   ctx.strokeStyle = 'rgba(67,97,238,0.3)'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(W / 2 - 260, 210); ctx.lineTo(W / 2 + 260, 210); ctx.stroke();
@@ -844,7 +1132,7 @@ function generateCertificate(name, pct, sinf, testTitle, topic) {
   ctx.textAlign = 'right'; ctx.font = '13px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.8)';
   ctx.fillText('Platforma:', W - 100, 570);
   ctx.font = 'bold 16px Nunito,sans-serif'; ctx.fillStyle = '#1a1a2e';
-  ctx.fillText('InforTest \u2014 Informatika testi', W - 100, 592);
+  ctx.fillText('InforTest \u2014 ' + subjectName + ' testi', W - 100, 592);
 
   ctx.textAlign = 'center'; ctx.font = '11px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.6)';
   ctx.fillText("O'zbekiston, Namangan viloyati, Chortoq tumani, 6-maktab", W / 2, 620);
@@ -872,7 +1160,7 @@ function downloadCert() {
   var canvas = document.getElementById('certCanvas');
   var t = DB[selectedSinf].tests[selectedTestIdx];
   var link = document.createElement('a');
-  link.download = 'Sertifikat_' + currentUser.name.replace(/\s+/g, '_') + '_' + selectedSinf + '_' + t.title.replace(/\s+/g, '_') + '.png';
+  link.download = 'Sertifikat_' + currentUser.name.replace(/\s+/g, '_') + '_' + selectedSubject + '_' + selectedSinf + '_' + t.title.replace(/\s+/g, '_') + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
