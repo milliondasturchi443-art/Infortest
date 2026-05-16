@@ -29,11 +29,14 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 async function seedAdmin() {
   try {
+    const adminLogin = 'admin';
     const adminEmail = 'gamingalexuz@gmail.com';
-    const existing = await User.findOne({ email: adminEmail });
+    let existing = await User.findOne({ login: adminLogin });
+    if (!existing) existing = await User.findOne({ email: adminEmail });
     if (!existing) {
       await User.create({
         name: 'Admin',
+        login: adminLogin,
         email: adminEmail,
         password: '201018102510',
         role: 'admin',
@@ -41,13 +44,32 @@ async function seedAdmin() {
         region: 'Namangan, Chortoq',
       });
       console.log('Admin user created');
-    } else if (existing.role !== 'admin') {
-      existing.role = 'admin';
+    } else {
+      if (existing.role !== 'admin') existing.role = 'admin';
+      if (!existing.login) existing.login = adminLogin;
       await existing.save();
-      console.log('Admin role updated');
+      console.log('Admin ready');
     }
   } catch (err) {
     console.error('Seed admin error:', err.message);
+  }
+}
+
+async function migrateLogins() {
+  try {
+    // Drop old email unique index if it exists
+    try {
+      await User.collection.dropIndex('email_1');
+      console.log('Dropped old email_1 index');
+    } catch (e) { /* index may not exist */ }
+    const usersWithoutLogin = await User.find({ $or: [{ login: { $exists: false } }, { login: '' }, { login: null }] });
+    for (const u of usersWithoutLogin) {
+      u.login = u.email ? u.email.split('@')[0] + '_' + u._id.toString().slice(-4) : 'user_' + u._id.toString().slice(-6);
+      await u.save();
+    }
+    if (usersWithoutLogin.length > 0) console.log('Migrated ' + usersWithoutLogin.length + ' users to login system');
+  } catch (err) {
+    console.error('Migration error:', err.message);
   }
 }
 
@@ -58,6 +80,7 @@ mongoose
   })
   .then(async () => {
     console.log('MongoDB connected');
+    await migrateLogins();
     await seedAdmin();
   })
   .catch((err) => {

@@ -5,13 +5,16 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, school, region, grade } = req.body;
+    const { name, login, password, school, region, grade } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Ismingizni kiriting.' });
     }
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: "To'g'ri email kiriting." });
+    if (!login || login.trim().length < 3) {
+      return res.status(400).json({ error: 'Login kamida 3 ta belgi.' });
+    }
+    if (/[^a-zA-Z0-9._-]/.test(login.trim())) {
+      return res.status(400).json({ error: 'Login faqat harf, raqam, nuqta, chiziq.' });
     }
     if (!password || password.length < 6) {
       return res
@@ -19,16 +22,16 @@ router.post('/register', async (req, res) => {
         .json({ error: "Parol kamida 6 ta belgi bo'lishi kerak." });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({ login: login.toLowerCase().trim() });
     if (existing) {
       return res
         .status(400)
-        .json({ error: "Bu email allaqachon ro'yxatdan o'tgan." });
+        .json({ error: "Bu login allaqachon band." });
     }
 
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      login: login.toLowerCase().trim(),
       password,
       school: school || '',
       region: region || '',
@@ -47,20 +50,22 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { login, password } = req.body;
 
-    const user = await User.findOne({ email: email?.toLowerCase()?.trim() });
+    const loginVal = login?.toLowerCase()?.trim();
+    let user = await User.findOne({ login: loginVal });
+    if (!user) user = await User.findOne({ email: loginVal });
     if (!user) {
       return res
         .status(401)
-        .json({ error: "Email yoki parol noto'g'ri." });
+        .json({ error: "Login yoki parol noto'g'ri." });
     }
 
     const match = await user.comparePassword(password);
     if (!match) {
       return res
         .status(401)
-        .json({ error: "Email yoki parol noto'g'ri." });
+        .json({ error: "Login yoki parol noto'g'ri." });
     }
 
     res.json(user.toPublic());

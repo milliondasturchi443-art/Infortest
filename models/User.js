@@ -19,10 +19,16 @@ const testHistorySchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: {
+    login: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      default: '',
       lowercase: true,
       trim: true,
     },
@@ -69,7 +75,8 @@ userSchema.methods.toPublic = function () {
   return {
     id: this._id,
     name: this.name,
-    email: this.email,
+    login: this.login,
+    email: this.email || '',
     school: this.school,
     region: this.region,
     grade: this.grade,

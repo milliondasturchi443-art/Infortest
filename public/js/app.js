@@ -13,8 +13,7 @@ var userAnswers = [];
 var quizTimer = null;
 var quizTimeLeft = 0;
 var quizTotalTime = 0;
-var studyModeActive = false;
-var lastCorrectAnswers = [];
+var leaderboardInterval = null;
 
 var SUBJECT_NAMES = {
   informatika: 'Informatika',
@@ -111,24 +110,45 @@ function showSuccess(id, msg) {
   setTimeout(function () { el.classList.remove('show'); }, 4000);
 }
 
+function getGrade(pct) {
+  if (pct >= 75) return 5;
+  if (pct >= 60) return 4;
+  if (pct >= 50) return 3;
+  return 2;
+}
+
+function getGradeLabel(grade) {
+  if (grade === 5) return 'A\'lo';
+  if (grade === 4) return 'Yaxshi';
+  if (grade === 3) return 'Qoniqarli';
+  return 'Qoniqarsiz';
+}
+
+function getGradeColor(grade) {
+  if (grade === 5) return '#06d6a0';
+  if (grade === 4) return '#4361ee';
+  if (grade === 3) return '#f8961e';
+  return '#ef233c';
+}
+
 // ═══════ AUTH ═══════
 async function register() {
   var name = document.getElementById('regName').value.trim();
-  var email = document.getElementById('regEmail').value.trim().toLowerCase();
+  var login = document.getElementById('regLogin').value.trim().toLowerCase();
   var pass = document.getElementById('regPass').value;
-  var school = document.getElementById('regSchool').value.trim();
+  var school = document.getElementById('regSchool').value;
   var region = document.getElementById('regRegion').value;
   var grade = document.getElementById('regGrade').value;
 
   if (!name) return showErr('regErr', 'Ismingizni kiriting.');
-  if (!email.includes('@')) return showErr('regErr', "To'g'ri email kiriting.");
+  if (login.length < 3) return showErr('regErr', 'Login kamida 3 ta belgi.');
   if (pass.length < 6) return showErr('regErr', "Parol kamida 6 ta belgi bo'lishi kerak.");
 
   try {
     var res = await fetch(API + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name, email: email, password: pass, school: school, region: region, grade: grade }),
+      body: JSON.stringify({ name: name, login: login, password: pass, school: school, region: region, grade: grade }),
     });
     var data = await res.json();
     if (!res.ok) return showErr('regErr', data.error);
@@ -141,13 +161,13 @@ async function register() {
 }
 
 async function login() {
-  var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  var login = document.getElementById('loginLogin').value.trim().toLowerCase();
   var pass = document.getElementById('loginPass').value;
   try {
     var res = await fetch(API + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pass }),
+      body: JSON.stringify({ login: login, password: pass }),
     });
     var data = await res.json();
     if (!res.ok) return showErr('loginErr', data.error);
@@ -208,7 +228,7 @@ function refreshDashboard() {
   document.getElementById('dashGreet').textContent = 'Salom, ' + currentUser.name + '! \uD83D\uDC4B';
 
   document.getElementById('sidebarName').textContent = currentUser.name;
-  document.getElementById('sidebarEmail').textContent = currentUser.email;
+  document.getElementById('sidebarLogin').textContent = '@' + (currentUser.login || '');
 
   var initials = currentUser.name.split(' ').map(function (w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
   document.getElementById('topbarAvatar').textContent = initials;
@@ -288,7 +308,7 @@ function showDashTab(tab, el) {
 
   document.getElementById('topbarTitle').textContent = TAB_TITLES[tab] || tab;
 
-  if (tab === 'leaderboard') loadLeaderboard();
+  if (tab === 'leaderboard') { loadLeaderboard(); startLeaderboardAutoUpdate(); }
   if (tab === 'admin') loadAdmin();
   if (tab === 'stats') updateStatsTab();
   if (tab === 'profile') updateProfileTab();
@@ -359,7 +379,7 @@ function updateProfileTab() {
   var initials = currentUser.name.split(' ').map(function (w) { return w[0]; }).join('').toUpperCase().substring(0, 2);
   document.getElementById('profileAvatar').textContent = initials;
   document.getElementById('profileName').textContent = currentUser.name;
-  document.getElementById('profileEmail').textContent = currentUser.email;
+  document.getElementById('profileLogin').textContent = '@' + (currentUser.login || '');
   document.getElementById('profileSchool').textContent = currentUser.school ? '\uD83C\uDFEB ' + currentUser.school : '';
   document.getElementById('profileRegion').textContent = currentUser.region ? '\uD83D\uDCCD ' + currentUser.region : '';
   document.getElementById('profileGrade').textContent = currentUser.grade ? '\uD83D\uDCDA ' + currentUser.grade : '';
@@ -631,7 +651,7 @@ function updateStatsTab() {
 // ═══════ LEADERBOARD ═══════
 async function loadLeaderboard() {
   var container = document.getElementById('leaderboardContent');
-  container.innerHTML = '<p style="text-align:center;color:var(--muted)">Yuklanmoqda...</p>';
+  if (!container) return;
   try {
     var res = await fetch(API + '/api/quiz/leaderboard');
     var data = await res.json();
@@ -639,10 +659,12 @@ async function loadLeaderboard() {
       container.innerHTML = '<p style="text-align:center;color:var(--muted)">Hali hech kim test topshirmadi</p>';
       return;
     }
-    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th></tr></thead><tbody>';
+    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th><th>Baho</th></tr></thead><tbody>';
     data.forEach(function (u) {
       var rankClass = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
       var medal = u.rank === 1 ? '\uD83E\uDD47' : u.rank === 2 ? '\uD83E\uDD48' : u.rank === 3 ? '\uD83E\uDD49' : u.rank;
+      var grade = getGrade(u.avgPct);
+      var gradeColor = getGradeColor(grade);
       html += '<tr class="lb-row">';
       html += '<td><span class="lb-rank ' + rankClass + '">' + medal + '</span></td>';
       html += '<td>' + u.name + '</td>';
@@ -651,6 +673,7 @@ async function loadLeaderboard() {
       html += '<td>' + (u.streak > 0 ? '\uD83D\uDD25' + u.streak : '\u2014') + '</td>';
       html += '<td>' + u.totalTests + '</td>';
       html += '<td><strong>' + u.avgPct + '%</strong></td>';
+      html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:8px;font-weight:800;color:#fff;background:' + gradeColor + '">' + grade + '</span></td>';
       html += '</tr>';
     });
     html += '</tbody></table>';
@@ -658,6 +681,19 @@ async function loadLeaderboard() {
   } catch (err) {
     container.innerHTML = '<p style="text-align:center;color:var(--red)">Xatolik yuz berdi</p>';
   }
+}
+
+function startLeaderboardAutoUpdate() {
+  if (leaderboardInterval) clearInterval(leaderboardInterval);
+  leaderboardInterval = setInterval(function () {
+    var lbTab = document.getElementById('tab-leaderboard');
+    if (lbTab && lbTab.classList.contains('active-tab')) {
+      loadLeaderboard();
+    } else {
+      clearInterval(leaderboardInterval);
+      leaderboardInterval = null;
+    }
+  }, 10000);
 }
 
 // ═══════ ADMIN ═══════
@@ -715,7 +751,7 @@ async function loadAdminUsers() {
     var html = '';
     data.users.forEach(function (u) {
       html += '<div class="admin-user-row">';
-      html += '<div><span class="name">' + u.name + '</span><br><span class="meta">' + u.email + ' | ' + (u.school || '\u2014') + ' | ' + (u.grade || '\u2014') + ' | Tests: ' + u.totalTests + ' | Avg: ' + u.avgPct + '%</span></div>';
+      html += '<div><span class="name">' + u.name + '</span><br><span class="meta">' + (u.login || '\u2014') + ' | ' + (u.school || '\u2014') + ' | ' + (u.grade || '\u2014') + ' | Tests: ' + u.totalTests + ' | Avg: ' + u.avgPct + '%</span></div>';
       if (u.role !== 'admin') {
         html += '<button class="btn-danger" onclick="deleteUser(\'' + u.id + '\')">O\'chirish</button>';
       } else {
@@ -747,12 +783,16 @@ function buildSinfGrid() {
   document.getElementById('sinfGreet').textContent = SUBJECT_ICONS[selectedSubject] + ' ' + SUBJECT_NAMES[selectedSubject];
   var grid = document.getElementById('sinfGrid');
   grid.innerHTML = '';
+  var letters = ['A', 'B', 'C', 'D'];
   Object.keys(DB).forEach(function (key) {
-    var div = document.createElement('div');
-    div.className = 'sinf-card';
-    div.innerHTML = '<div class="sinf-num">' + key.replace('-sinf', '') + '</div><div class="sinf-lbl">sinf</div>';
-    div.onclick = function () { selectSinf(key); };
-    grid.appendChild(div);
+    var sinfNum = key.replace('-sinf', '');
+    letters.forEach(function (letter) {
+      var div = document.createElement('div');
+      div.className = 'sinf-card';
+      div.innerHTML = '<div class="sinf-num">' + sinfNum + '-' + letter + '</div><div class="sinf-lbl">sinf</div>';
+      div.onclick = function () { selectSinf(key); };
+      grid.appendChild(div);
+    });
   });
 }
 
@@ -809,8 +849,6 @@ function shuffle(arr) {
 }
 
 function startQuiz() {
-  studyModeActive = false;
-  lastCorrectAnswers = [];
   var t = DB[selectedSinf].tests[selectedTestIdx];
   var originalQuestions = t.questions;
   var indices = [];
@@ -896,6 +934,12 @@ function selectAnswer(chosen, cont) {
   if (answered) return;
   answered = true;
   if (quizTimer) clearInterval(quizTimer);
+  quizTimer = null;
+  // Show timer stopped visually
+  var timerEl = document.getElementById('quizTimer');
+  if (timerEl) {
+    timerEl.innerHTML = '<div class="timer-ring timer-stopped" style="--pct:100%;--timer-color:#4361ee"><span class="timer-num">\u2713</span></div>';
+  }
   var q = questions[qIndex];
   userAnswers[q.origIdx] = chosen;
   var btns = cont.querySelectorAll('.option');
@@ -926,7 +970,6 @@ async function submitQuiz() {
     var data = await res.json();
     if (!res.ok) { alert(data.error || 'Xatolik yuz berdi'); return; }
     score = data.score;
-    lastCorrectAnswers = data.correctAnswers || [];
     currentUser.results[data.key] = data.pct;
     currentUser.totalTests = (currentUser.totalTests || 0) + 1;
     currentUser.totalCorrect = (currentUser.totalCorrect || 0) + data.score;
@@ -970,10 +1013,13 @@ function showResult(sc, total, pct, xpEarned, streak) {
       '</div>';
   }
 
-  // Study mode button
-  var studyBtn = document.getElementById('studyModeBtn');
-  if (studyBtn) {
-    studyBtn.style.display = 'block';
+  // Grade badge
+  var gradeBadge = document.getElementById('resultGradeBadge');
+  if (gradeBadge) {
+    var rGrade = getGrade(pct);
+    var rColor = getGradeColor(rGrade);
+    var rLabel = getGradeLabel(rGrade);
+    gradeBadge.innerHTML = '<span style="display:inline-block;padding:8px 24px;border-radius:12px;font-weight:900;font-size:1.3rem;color:#fff;background:' + rColor + ';box-shadow:0 4px 15px ' + rColor + '40">' + rLabel + ' (' + rGrade + ')</span>';
   }
 
   var cs = document.getElementById('certSection');
@@ -985,44 +1031,6 @@ function showResult(sc, total, pct, xpEarned, streak) {
     launchConfetti();
   } else { cs.style.display = 'none'; }
   showScreen('resultScreen');
-}
-
-// ═══════ STUDY MODE ═══════
-function enterStudyMode() {
-  studyModeActive = true;
-  var t = DB[selectedSinf].tests[selectedTestIdx];
-  var container = document.getElementById('studyModeContent');
-  if (!container) return;
-
-  var html = '<h3>\uD83D\uDCDA ' + SUBJECT_NAMES[selectedSubject] + ' | ' + t.title + ' — Javoblarni ko\'rish</h3>';
-  html += '<p class="section-desc">' + t.topic + '</p>';
-
-  t.questions.forEach(function (q, i) {
-    var letters = ['A', 'B', 'C', 'D'];
-    var userAns = (userAnswers && userAnswers[i] !== undefined) ? userAnswers[i] : -1;
-    var correctAns = lastCorrectAnswers[i] ? lastCorrectAnswers[i].correct : q.a;
-    var isCorrect = userAns === correctAns;
-
-    html += '<div class="study-question ' + (isCorrect ? 'correct' : 'wrong') + '">';
-    html += '<div class="study-q-num">' + (i + 1) + '. ' + q.q + '</div>';
-    html += '<div class="study-opts">';
-    q.opts.forEach(function (opt, j) {
-      var cls = 'study-opt';
-      if (j === correctAns) cls += ' correct-opt';
-      if (j === userAns && !isCorrect) cls += ' wrong-opt';
-      html += '<div class="' + cls + '">' + letters[j] + ') ' + opt + '</div>';
-    });
-    html += '</div>';
-    if (!isCorrect) {
-      html += '<div class="study-explanation">\u2717 Sizning javobingiz: ' + (userAns >= 0 ? letters[userAns] : 'Javob berilmagan') + ' | \u2713 To\'g\'ri javob: ' + letters[correctAns] + '</div>';
-    } else {
-      html += '<div class="study-correct">\u2713 To\'g\'ri!</div>';
-    }
-    html += '</div>';
-  });
-
-  container.innerHTML = html;
-  showScreen('studyScreen');
 }
 
 // ═══════ CONFETTI ═══════
@@ -1052,22 +1060,35 @@ function goToNaz() { showScreen('nazScreen'); selectSinf(selectedSinf); }
 // ═══════ CERTIFICATE ═══════
 function generateCertificate(name, pct, sinf, testTitle, topic) {
   var canvas = document.getElementById('certCanvas');
-  var W = 1100, H = 750;
+  var W = 1100, H = 800;
   canvas.width = W; canvas.height = H;
   var ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#fff9f0'; ctx.fillRect(0, 0, W, H);
+  var grade = getGrade(pct);
+  var gradeLabel = getGradeLabel(grade);
+  var gradeColor = getGradeColor(grade);
+
+  // Grade-based color themes
+  var themes = {
+    5: { bg1: '#f0fdf4', bg2: 'rgba(6,214,160,0.06)', border1: '#06d6a0', border2: '#10b981', accent: '#059669', star: 5 },
+    4: { bg1: '#eff6ff', bg2: 'rgba(67,97,238,0.06)', border1: '#4361ee', border2: '#3a0ca3', accent: '#4361ee', star: 3 },
+    3: { bg1: '#fffbeb', bg2: 'rgba(248,150,30,0.06)', border1: '#f8961e', border2: '#e67e22', accent: '#d97706', star: 2 },
+    2: { bg1: '#fef2f2', bg2: 'rgba(239,35,60,0.06)', border1: '#ef233c', border2: '#dc2626', accent: '#dc2626', star: 0 },
+  };
+  var th = themes[grade];
+
+  ctx.fillStyle = th.bg1; ctx.fillRect(0, 0, W, H);
   var bg = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 600);
-  bg.addColorStop(0, 'rgba(67,97,238,0.04)'); bg.addColorStop(1, 'rgba(247,37,133,0.04)');
+  bg.addColorStop(0, th.bg2); bg.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
   var bGrad = ctx.createLinearGradient(0, 0, W, H);
-  bGrad.addColorStop(0, '#4361ee'); bGrad.addColorStop(0.5, '#f72585'); bGrad.addColorStop(1, '#4361ee');
-  ctx.strokeStyle = bGrad; ctx.lineWidth = 8;
-  roundRect(ctx, 16, 16, W - 32, H - 32, 24); ctx.stroke();
+  bGrad.addColorStop(0, th.border1); bGrad.addColorStop(0.5, th.border2); bGrad.addColorStop(1, th.border1);
+  ctx.strokeStyle = bGrad; ctx.lineWidth = 10;
+  roundRect(ctx, 12, 12, W - 24, H - 24, 28); ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(67,97,238,0.2)'; ctx.lineWidth = 2;
-  roundRect(ctx, 30, 30, W - 60, H - 60, 18); ctx.stroke();
+  ctx.strokeStyle = th.border1 + '33'; ctx.lineWidth = 2;
+  roundRect(ctx, 28, 28, W - 56, H - 56, 20); ctx.stroke();
 
   ['tl', 'tr', 'bl', 'br'].forEach(function (pos) {
     var x = pos.includes('r') ? W - 55 : 55;
@@ -1075,70 +1096,87 @@ function generateCertificate(name, pct, sinf, testTitle, topic) {
     var fx = pos.includes('r') ? -1 : 1;
     var fy = pos.includes('b') ? -1 : 1;
     ctx.save(); ctx.translate(x, y); ctx.scale(fx, fy);
-    ctx.strokeStyle = 'rgba(67,97,238,0.6)'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(0, 25); ctx.lineTo(0, 0); ctx.lineTo(25, 0); ctx.stroke();
+    ctx.strokeStyle = th.border1 + '99'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(0, 0); ctx.lineTo(30, 0); ctx.stroke();
     ctx.restore();
   });
 
-  ctx.fillStyle = 'rgba(67,97,238,0.05)';
-  for (var x = 60; x < W; x += 44) for (var y = 60; y < H; y += 44) { ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = th.border1 + '0D';
+  for (var xx = 60; xx < W; xx += 44) for (var yy = 60; yy < H; yy += 44) { ctx.beginPath(); ctx.arc(xx, yy, 2, 0, Math.PI * 2); ctx.fill(); }
 
-  ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.fillText('\uD83C\uDFC6', W / 2, 110);
-  ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = 'bold 13px Nunito, sans-serif'; ctx.letterSpacing = '5px'; ctx.fillText('SERTIFIKAT', W / 2, 150);
+  // Stars based on grade
+  var stars = '';
+  for (var s = 0; s < th.star; s++) stars += '\u2B50';
+  if (stars) {
+    ctx.font = '36px serif'; ctx.textAlign = 'center'; ctx.fillText(stars, W / 2, 85);
+  }
+
+  ctx.font = '48px serif'; ctx.textAlign = 'center'; ctx.fillText('\uD83C\uDFC6', W / 2, 130);
+
+  ctx.fillStyle = th.accent; ctx.font = 'bold 14px Nunito, sans-serif'; ctx.fillText('SERTIFIKAT', W / 2, 165);
 
   var subjectName = SUBJECT_NAMES[selectedSubject] || 'Informatika';
   var tGrad = ctx.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
-  tGrad.addColorStop(0, '#4361ee'); tGrad.addColorStop(1, '#f72585');
-  ctx.fillStyle = tGrad; ctx.font = 'bold 28px Georgia,serif'; ctx.letterSpacing = '0px';
-  ctx.fillText(subjectName.toUpperCase() + " BO'YICHA TESTNI TOPSHIRGANLIK HAQIDA", W / 2, 190);
+  tGrad.addColorStop(0, th.border1); tGrad.addColorStop(1, th.border2);
+  ctx.fillStyle = tGrad; ctx.font = 'bold 26px Georgia,serif';
+  ctx.fillText(subjectName.toUpperCase() + " BO'YICHA TESTNI TOPSHIRGANLIK HAQIDA", W / 2, 205);
 
-  ctx.strokeStyle = 'rgba(67,97,238,0.3)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(W / 2 - 260, 210); ctx.lineTo(W / 2 + 260, 210); ctx.stroke();
+  ctx.strokeStyle = th.border1 + '4D'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 260, 225); ctx.lineTo(W / 2 + 260, 225); ctx.stroke();
 
-  ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = '18px Nunito,sans-serif'; ctx.fillText('Ushbu sertifikat', W / 2, 252);
+  ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = '18px Nunito,sans-serif'; ctx.fillText('Ushbu sertifikat', W / 2, 265);
 
   var nGrad = ctx.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
-  nGrad.addColorStop(0, '#1a1a2e'); nGrad.addColorStop(1, '#4361ee');
-  ctx.fillStyle = nGrad; ctx.font = 'bold 56px Georgia,serif'; ctx.fillText(name, W / 2, 322);
+  nGrad.addColorStop(0, '#1a1a2e'); nGrad.addColorStop(1, th.accent);
+  ctx.fillStyle = nGrad; ctx.font = 'bold 52px Georgia,serif'; ctx.fillText(name, W / 2, 330);
 
   var nW = ctx.measureText(name).width;
   var ulG = ctx.createLinearGradient(W / 2 - nW / 2, 0, W / 2 + nW / 2, 0);
-  ulG.addColorStop(0, 'transparent'); ulG.addColorStop(0.5, '#4361ee'); ulG.addColorStop(1, 'transparent');
+  ulG.addColorStop(0, 'transparent'); ulG.addColorStop(0.5, th.accent); ulG.addColorStop(1, 'transparent');
   ctx.strokeStyle = ulG; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(W / 2 - nW / 2, 334); ctx.lineTo(W / 2 + nW / 2, 334); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W / 2 - nW / 2, 342); ctx.lineTo(W / 2 + nW / 2, 342); ctx.stroke();
 
-  ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = '18px Nunito,sans-serif'; ctx.fillText('ga topshirildi', W / 2, 368);
+  ctx.fillStyle = 'rgba(107,125,179,0.8)'; ctx.font = '18px Nunito,sans-serif'; ctx.fillText('ga topshirildi', W / 2, 375);
   ctx.fillStyle = '#1a1a2e'; ctx.font = 'bold 20px Nunito,sans-serif';
-  ctx.fillText(sinf.toUpperCase() + ' \u2014 ' + testTitle, W / 2, 408);
-  ctx.fillStyle = 'rgba(107,125,179,0.9)'; ctx.font = '16px Nunito,sans-serif'; ctx.fillText(topic, W / 2, 434);
+  ctx.fillText(sinf.toUpperCase() + ' \u2014 ' + testTitle, W / 2, 415);
+  ctx.fillStyle = 'rgba(107,125,179,0.9)'; ctx.font = '16px Nunito,sans-serif'; ctx.fillText(topic, W / 2, 442);
 
-  var bx = W / 2 - 90, by = 458, bw = 180, bh = 56;
-  var badgeGrad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-  badgeGrad.addColorStop(0, 'rgba(6,214,160,0.2)'); badgeGrad.addColorStop(1, 'rgba(67,97,238,0.2)');
-  ctx.fillStyle = badgeGrad; roundRect(ctx, bx, by, bw, bh, 28); ctx.fill();
-  ctx.strokeStyle = 'rgba(6,214,160,0.5)'; ctx.lineWidth = 2;
-  roundRect(ctx, bx, by, bw, bh, 28); ctx.stroke();
-  ctx.fillStyle = '#06d6a0'; ctx.font = 'bold 28px Nunito,sans-serif'; ctx.fillText('Natija: ' + pct + '%', W / 2, 494);
+  // Grade badge - big and beautiful
+  var gbW = 280, gbH = 64;
+  var gbX = W / 2 - gbW / 2, gbY = 466;
+  var gbGrad = ctx.createLinearGradient(gbX, 0, gbX + gbW, 0);
+  gbGrad.addColorStop(0, gradeColor); gbGrad.addColorStop(1, th.border2);
+  ctx.fillStyle = gbGrad; roundRect(ctx, gbX, gbY, gbW, gbH, 32); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 28px Nunito,sans-serif';
+  ctx.fillText(gradeLabel + ' (' + grade + ') \u2014 ' + pct + '%', W / 2, 506);
 
-  ctx.strokeStyle = 'rgba(67,97,238,0.2)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, 534); ctx.lineTo(W - 80, 534); ctx.stroke();
+  ctx.strokeStyle = th.border1 + '33'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 556); ctx.lineTo(W - 80, 556); ctx.stroke();
 
   var today = new Date();
   var dateStr = today.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
   ctx.textAlign = 'left'; ctx.font = '13px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.8)';
-  ctx.fillText('Berilgan sana:', 100, 570);
-  ctx.font = 'bold 16px Nunito,sans-serif'; ctx.fillStyle = '#1a1a2e'; ctx.fillText(dateStr, 100, 592);
+  ctx.fillText('Berilgan sana:', 100, 590);
+  ctx.font = 'bold 16px Nunito,sans-serif'; ctx.fillStyle = '#1a1a2e'; ctx.fillText(dateStr, 100, 612);
 
   ctx.textAlign = 'right'; ctx.font = '13px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.8)';
-  ctx.fillText('Platforma:', W - 100, 570);
+  ctx.fillText('Platforma:', W - 100, 590);
   ctx.font = 'bold 16px Nunito,sans-serif'; ctx.fillStyle = '#1a1a2e';
-  ctx.fillText('InforTest \u2014 ' + subjectName + ' testi', W - 100, 592);
+  ctx.fillText('InforTest \u2014 ' + subjectName + ' testi', W - 100, 612);
 
-  ctx.textAlign = 'center'; ctx.font = '11px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.6)';
-  ctx.fillText("O'zbekiston, Namangan viloyati, Chortoq tumani, 6-maktab", W / 2, 620);
+  ctx.textAlign = 'center'; ctx.font = '13px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.7)';
+  ctx.fillText("O'zbekiston, Namangan viloyati, Chortoq tumani, 6-maktab", W / 2, 660);
 
   ctx.font = '12px Nunito,sans-serif'; ctx.fillStyle = 'rgba(107,125,179,0.5)';
-  ctx.fillText('ID: CERT-' + Math.random().toString(36).substr(2, 10).toUpperCase(), W / 2, 648);
+  ctx.fillText('ID: CERT-' + Math.random().toString(36).substr(2, 10).toUpperCase(), W / 2, 690);
+
+  // School seal watermark
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.font = 'bold 120px Georgia,serif'; ctx.fillStyle = th.accent;
+  ctx.fillText('6', W / 2 - 350, 500);
+  ctx.fillText('6', W / 2 + 350, 500);
+  ctx.restore();
 
   var img = new Image();
   img.src = canvas.toDataURL('image/png');

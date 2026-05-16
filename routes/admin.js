@@ -36,7 +36,7 @@ router.get('/users', requireAdmin, async (req, res) => {
     const list = users.map((u) => ({
       id: u._id,
       name: u.name,
-      email: u.email,
+      login: u.login,
       school: u.school,
       region: u.region,
       grade: u.grade,
@@ -110,7 +110,7 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
     const recentUsers = await User.find()
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('name email school grade createdAt totalTests');
+      .select('name login school grade createdAt totalTests');
 
     res.json({
       totalUsers,
@@ -131,7 +131,7 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
       })),
       recentUsers: recentUsers.map((u) => ({
         name: u.name,
-        email: u.email,
+        login: u.login,
         school: u.school,
         grade: u.grade,
         totalTests: u.totalTests,
