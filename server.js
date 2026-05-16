@@ -46,9 +46,9 @@ async function seedAdmin() {
       console.log('Admin user created');
     } else {
       if (existing.role !== 'admin') existing.role = 'admin';
-      if (!existing.login) existing.login = adminLogin;
+      if (!existing.login || existing.login !== adminLogin) existing.login = adminLogin;
       await existing.save();
-      console.log('Admin ready');
+      console.log('Admin ready (login: admin)');
     }
   } catch (err) {
     console.error('Seed admin error:', err.message);
