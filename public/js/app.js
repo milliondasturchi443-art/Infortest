@@ -659,7 +659,7 @@ async function loadLeaderboard() {
       container.innerHTML = '<p style="text-align:center;color:var(--muted)">Hali hech kim test topshirmadi</p>';
       return;
     }
-    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th><th>Baho</th></tr></thead><tbody>';
+    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th><th>Baho</th></tr></thead><tbody>';
     data.forEach(function (u) {
       var rankClass = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
       var medal = u.rank === 1 ? '\uD83E\uDD47' : u.rank === 2 ? '\uD83E\uDD48' : u.rank === 3 ? '\uD83E\uDD49' : u.rank;
@@ -668,6 +668,7 @@ async function loadLeaderboard() {
       html += '<tr class="lb-row">';
       html += '<td><span class="lb-rank ' + rankClass + '">' + medal + '</span></td>';
       html += '<td>' + u.name + '</td>';
+      html += '<td><span style="font-weight:700;color:var(--primary)">' + (u.grade || '\u2014') + '</span></td>';
       html += '<td><span class="lb-school">' + (u.school || '\u2014') + '</span></td>';
       html += '<td><span class="lb-level">' + (u.level || 1) + '</span></td>';
       html += '<td>' + (u.streak > 0 ? '\uD83D\uDD25' + u.streak : '\u2014') + '</td>';
