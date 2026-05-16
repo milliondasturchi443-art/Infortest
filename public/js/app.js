@@ -783,16 +783,12 @@ function buildSinfGrid() {
   document.getElementById('sinfGreet').textContent = SUBJECT_ICONS[selectedSubject] + ' ' + SUBJECT_NAMES[selectedSubject];
   var grid = document.getElementById('sinfGrid');
   grid.innerHTML = '';
-  var letters = ['A', 'B', 'C', 'D'];
   Object.keys(DB).forEach(function (key) {
-    var sinfNum = key.replace('-sinf', '');
-    letters.forEach(function (letter) {
-      var div = document.createElement('div');
-      div.className = 'sinf-card';
-      div.innerHTML = '<div class="sinf-num">' + sinfNum + '-' + letter + '</div><div class="sinf-lbl">sinf</div>';
-      div.onclick = function () { selectSinf(key); };
-      grid.appendChild(div);
-    });
+    var div = document.createElement('div');
+    div.className = 'sinf-card';
+    div.innerHTML = '<div class="sinf-num">' + key.replace('-sinf', '') + '</div><div class="sinf-lbl">sinf</div>';
+    div.onclick = function () { selectSinf(key); };
+    grid.appendChild(div);
   });
 }
 

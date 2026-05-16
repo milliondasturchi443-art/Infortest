@@ -177,27 +177,29 @@ router.get('/results/:userId', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
   try {
     const users = await User.find({ totalTests: { $gt: 0 } })
-      .sort({ totalCorrect: -1 })
-      .limit(50)
       .select('name school region grade totalTests totalCorrect totalQuestions xp level streak');
 
-    const leaderboard = users.map((u, i) => ({
-      rank: i + 1,
-      name: u.name,
-      school: u.school,
-      region: u.region,
-      grade: u.grade,
-      totalTests: u.totalTests,
-      totalCorrect: u.totalCorrect,
-      totalQuestions: u.totalQuestions,
-      avgPct:
-        u.totalQuestions > 0
-          ? Math.round((u.totalCorrect / u.totalQuestions) * 100)
-          : 0,
-      xp: u.xp || 0,
-      level: u.level || 1,
-      streak: u.streak || 0,
-    }));
+    const sorted = users
+      .map((u) => ({
+        name: u.name,
+        school: u.school,
+        region: u.region,
+        grade: u.grade,
+        totalTests: u.totalTests,
+        totalCorrect: u.totalCorrect,
+        totalQuestions: u.totalQuestions,
+        avgPct:
+          u.totalQuestions > 0
+            ? Math.round((u.totalCorrect / u.totalQuestions) * 100)
+            : 0,
+        xp: u.xp || 0,
+        level: u.level || 1,
+        streak: u.streak || 0,
+      }))
+      .sort((a, b) => b.avgPct - a.avgPct)
+      .slice(0, 50);
+
+    const leaderboard = sorted.map((u, i) => ({ rank: i + 1, ...u }));
 
     res.json(leaderboard);
   } catch (err) {
