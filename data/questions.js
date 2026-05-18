@@ -641,6 +641,187 @@ const DB = {
         key: ["B","C","B","D","A","C","D","B","B","A","A","C","B","A","C"]
       }
     ]
+  },
+  "11-sinf": {
+    label: "11-sinf",
+    tests: [
+      {
+        title: "1-Nazorat ishi",
+        topic: "Audio va video fayllar, sempl tezligi, bit chuqurligi",
+        questions: [
+          {q:"Audio faylning sempl tezligi nima?",opts:["Har soniyada olingan sempl soni","Audio fayl hajmi","Musiqa formatini aniqlash","Video kadr soni"],a:0},
+          {q:"Sempl tezligi qanday o'lchanadi?",opts:["Sekundda kilobaytda (kb/s)","Hertzda (Hz)","Baytda (B)","Pikselda (px)"],a:1},
+          {q:"Bit chuqurligi qanday tushuntiriladi?",opts:["Foydalanilgan bitlar soni","Audio yozib olish jarayoni","Har soniyada ishlov beriladigan bitlar soni","Foydalanuvchi interfeysi"],a:0},
+          {q:"Video fayllarni siqishning asosiy maqsadi nima?",opts:["Fayl hajmini oshirish","Audio hajmini kamaytirish","Videoning sifatini oshirish","Fayl hajmini kichraytirish va xotirani tejash"],a:3},
+          {q:"Audio fayllarni siqishda qanday yo'qotishlar yuz beradi?",opts:["Fayl hajmi kamayadi","Fayl hajmi ortadi","Sifat yo'qoladi","Faylning kengaytmasi o'zgaradi"],a:2},
+          {q:"Audio fayllarda bit tezligi qanday aniqlanadi?",opts:["Sempl tezligi va bit chuqurligi ko'paytmasi orqali","Faqat fayl kengaytmasi orqali","Foydalanuvchi tomonidan tanlanadi","Raqamli signallar asosida"],a:0},
+          {q:"Kadr tezligi nima?",opts:["Har soniyada ko'rsatiladigan kadrlar soni","Video hajmi","Tasvir hajmi","Video fayl kengaytmasi"],a:0},
+          {q:"Video siqishda qaysi format keng qo'llaniladi?",opts:["AVI","GIF","DOCX","MP4"],a:3},
+          {q:"Video faylning aniqligi nima bilan o'lchanadi?",opts:["Hertz","Bayt","Piksel","Raqamli"],a:2},
+          {q:"Video fayllarni siqishning qanday turlari mavjud?",opts:["Ma'lumotlarni yo'qotishsiz va yo'qotish bilan siqish","Faqat hajmni kamaytirish","Faqat video sifatini oshirish","Faqat kadrlarni ko'paytirish"],a:0},
+          {q:"Audio faylning fayl hajmi qanday hisoblanadi?",opts:["Faqat sempl tezligi orqali","Video aniqligi orqali","Foydalanuvchi tomonidan aniqlanadi","Sempl tezligi, bit chuqurligi va davomiylikning ko'paytmasi orqali"],a:3},
+          {q:"Kadr tezligining ortishi video fayllarga qanday ta'sir qiladi?",opts:["Sifatni pasaytiradi","Fayl hajmini oshiradi","Fayl hajmini kichraytiradi","Faqat ranglarni o'zgartiradi"],a:1},
+          {q:"Fayllarni tahrirlash uchun qanday dasturiy ta'minot ishlatiladi?",opts:["Microsoft Word","Adobe Premiere Pro","Excel","PowerPoint"],a:1},
+          {q:"Video fayllarni tahrirlashda kadrlar sonining ta'siri qanday?",opts:["Kadrlar soni videoning rangiga ta'sir qiladi","Kadrlar soni kamayishi video sifatini oshiradi","Kadrlar soni ko'proq bo'lsa, video silliqroq bo'ladi","Fayl kengaytmasi o'zgaradi"],a:2},
+          {q:"Video va audio fayllarni tahrirlashda qanday kodeklar ishlatiladi?",opts:["JPEG","H.264, MP3","DOCX","PNG"],a:1}
+        ],
+        key: ["A","B","A","D","C","A","A","D","C","A","D","B","B","C","B"]
+      },
+      {
+        title: "2-Nazorat ishi",
+        topic: "3D printer, golografiya, virtual reallik, bulutli texnologiya",
+        questions: [
+          {q:"3D printer yordamida nimalarni yaratish mumkin?",opts:["Faqat qog'oz modellarini","Tibbiy protezlar va organ o'rnini bosuvchi vositalar","Faqat raqamli tasvirlarni","Mobil qurilmalarni"],a:1},
+          {q:"Golografik tasvir qanday tayyorlanadi?",opts:["Oddiy kamera yordamida","Raqamli skanerlash orqali","Mobil telefon kamerasida","Lazer yordamida yorug'lik interferensiyasini yozib olish orqali"],a:3},
+          {q:"To'rtinchi avlod optik xotira qurilmalarining hajmi qanday?",opts:["100 GB","400 GB","1 TB","10 GB"],a:2},
+          {q:"Virtual reallikning asosiy qo'llanilishi qaysi sohada keng qo'llanilmoqda?",opts:["Matn yozish","Audio yozish","Rasm chizish","O'yinlar va simulyatsiyalar"],a:3},
+          {q:"Tibbiyotda 3D printerdan qanday foydalaniladi?",opts:["Singan suyaklar uchun gipslar tayyorlashda","Faqat qog'oz modellarini yaratish uchun","O'yin texnologiyalarini yaratishda","Tibbiy hujjatlarni chop etishda"],a:0},
+          {q:"3D printerdan foydalanish qaysi sohalarda rivojlanmoqda?",opts:["Faqat o'yinlar va tasvirlarda","Tibbiyot, muhandislik va ishlab chiqarishda","Faqat ta'lim sohasida","Faqat reklama sohasida"],a:1},
+          {q:"Virtual reallik nima uchun xavf tug'dirishi mumkin?",opts:["Tasvirning aniq bo'lmasligi","Foydalanuvchi tasvirni yaxshi ko'ra olmaydi","Foydalanuvchi o'zini xavfli muhitda deb his qilishi mumkin","Texnologiya qo'llanishi murakkab"],a:2},
+          {q:"Biometriya deganda nimani tushunasiz?",opts:["Sun'iy aql texnologiyasi","Ma'lumotlarni shifrlash usuli","Raqamli ma'lumotlarni saqlash","Insonning jismoniy xususiyatlarini o'lchash"],a:3},
+          {q:"Bulutli texnologiya qanday maqsadlarda ishlatiladi?",opts:["Faqat matnli hujjatlarni saqlash uchun","Ma'lumotlarni saqlash va qayta ishlash uchun masofaviy serverlardan foydalanish","Faqat audio fayllarni tahrirlash uchun","Raqamli tasvirlarni yaratish uchun"],a:1},
+          {q:"3D printer qaysi materialdan foydalanadi?",opts:["Temir","Shisha","Suv","Plastmassa"],a:3},
+          {q:"Haydovchisiz avtomobillar qaysi texnologiyaga asoslanadi?",opts:["Sun'iy intellekt","Mobil telefon tarmog'i","Raqamli grafika","Matn tahrirlash dasturlari"],a:0},
+          {q:"4G texnologiyasi qanday afzalliklarni beradi?",opts:["Faqat ovozli aloqa","Tezkor internet ulanishi va yuklab olish tezligi","Faqat matnli ma'lumotlar almashinuvi","O'yinlar uchun platforma"],a:1},
+          {q:"Virtual reallik qanday muammolarni keltirib chiqarishi mumkin?",opts:["Harakat kasalliklari va tutqanoq xavfi","Tasvirning to'liq ko'rinmasligi","Tasvirning o'ta yuqori aniqligi","Foydalanuvchi uchun murakkab interfeys"],a:0},
+          {q:"Sun'iy intellekt qaysi sohalarda qo'llaniladi?",opts:["Matn yozish va o'qish","Haydovchisiz avtomobillar, tibbiyot, dasturiy tizimlar","Faqat grafik dizaynda","Video fayllarni tahrirlashda"],a:1},
+          {q:"Bulutli texnologiyalar yordamida qanday fayllar boshqariladi?",opts:["Faqat rasmlar","Faqat matnli fayllar","Har xil turdagi ma'lumotlar, jumladan matn, rasm va video","Faqat audio fayllar"],a:2}
+        ],
+        key: ["B","D","C","D","A","B","C","D","B","D","A","B","A","B","C"]
+      },
+      {
+        title: "3-Nazorat ishi",
+        topic: "Axborot texnologiyalari, elektron tijorat, masofadan ishlash",
+        questions: [
+          {q:"Axborot texnologiyalari qanday sohalarga ta'sir qiladi?",opts:["Faqat tibbiyotga","Faqat sportga","Sport, tibbiyot va ishlab chiqarishga","Faqat ko'ngilochar sohalarga"],a:2},
+          {q:"Elektron tijorat qanday afzalliklarga ega?",opts:["Do'konlarga borish talab qilinmaydi","Faqat onlayn ko'ngilochar xizmatlarni oshiradi","Elektron tijorat xizmatlari qimmat","Mahsulotlar faqat internet orqali sotiladi"],a:0},
+          {q:"Onlayn xaridlarning kamchiligi nima?",opts:["Xaridorlar mahsulotni ko'ra olmaydi","Xaridorlar do'konga borishlari kerak","Xarid qimmat bo'ladi","Mahsulotni taqqoslash imkoniyati mavjud emas"],a:0},
+          {q:"Raqamli valyuta qanday ishlatiladi?",opts:["Naqd pulni almashtirish uchun","Xalqaro miqyosda foydalanish mumkin","Faqat mahalliy to'lovlar uchun","Kredit karta orqali amalga oshiriladi"],a:1},
+          {q:"Videokonferensiya qanday afzalliklarga ega?",opts:["Ko'p joylarda qo'llanilmaydi","Faqat audio aloqa imkonini beradi","Faqat korxonalarda ishlatiladi","Ishchilarga masofadan turib ishlash imkoniyatini beradi"],a:3},
+          {q:"Masofadan turib ishlashning qanday kamchiligi bor?",opts:["Uskunalar talabi yo'q","Faqat o'yinlar uchun ishlatiladi","Ishchilar uchun samaradorlik pasayadi","Faqat kattalar foydalanadi"],a:2},
+          {q:"Internet orqali savdo qilishning asosiy afzalligi nima?",opts:["Narxlar oshadi","Xaridorlar faqat do'konlarga borishi kerak","Xaridorlar mahsulotlarni oson taqqoslay oladi","Mahsulot sifatini ko'rib bo'lmaydi"],a:2},
+          {q:"Masofadan ishlashning ishchilarga qanday ta'siri bor?",opts:["Ishchilar samaradorligi oshadi","Ishchilar uchun yanada ko'proq vaqt talab etadi","Faqat katta tashkilotlar uchun foydali","Ishchilar uchun murakkab bo'ladi"],a:0},
+          {q:"Onlayn ta'lim qanday afzalliklarga ega?",opts:["Faqat sinfda o'qitiladi","Internet orqali manbalarga erkin kirish imkonini beradi","Faqat qo'llanma matnlarni o'qish imkoniyati mavjud","Faqat maxsus asbob-uskunalar talab qiladi"],a:1},
+          {q:"Videokonferensiyalardan foydalanishning qanday kamchiligi bor?",opts:["Faqat o'qituvchilar foydalanadi","Qurilma va dasturiy ta'minot talab etiladi","Har qanday internet tezligida ishlaydi","Hech qanday kamchiligi yo'q"],a:1},
+          {q:"Axborot texnologiyalari qanday tijorat sohalarida qo'llaniladi?",opts:["Faqat do'konlarda","Faqat moliyaviy xizmatlarda","Elektron tijorat va onlayn to'lovlarda","Faqat ta'lim sohasida"],a:2},
+          {q:"Onlayn kurslar qanday afzallik beradi?",opts:["O'quvchilar faqat darsxonada o'qiydi","Kurslar faqat ma'lum vaqtda bo'ladi","Faqat o'qituvchilar nazorati ostida bo'ladi","Internet orqali istalgan vaqtda o'qish imkoniyati"],a:3},
+          {q:"Axborot texnologiyalari qanday tarzda ijtimoiy modellarni o'zgartirgan?",opts:["Ijtimoiy tarmoqlar orqali odamlar o'zaro ko'proq muloqot qiladi","Faqat tijorat maqsadlari uchun qo'llaniladi","Ijtimoiy tarmoqlar faqat kompaniyalar uchun ishlatiladi","Odamlar orasida aloqa kamaygan"],a:0},
+          {q:"Axborot texnologiyalari qaysi sohada eng ko'p qo'llaniladi?",opts:["Moliyaviy sohalarda","Faqat mobil qurilmalarda","Faqat o'yin texnologiyalarida","Tibbiyotda, savdoda, ta'limda"],a:3},
+          {q:"Videokonferensiyalar orqali qanday afzalliklar mavjud?",opts:["Ishchilarga joydan qat'i nazar ishtirok etish imkonini beradi","Faqat korxonalarda amalga oshiriladi","Faqat ovozli aloqa","Faqat katta tashkilotlarda ishlatiladi"],a:0}
+        ],
+        key: ["C","A","A","B","D","C","C","A","B","B","C","D","A","D","A"]
+      },
+      {
+        title: "4-Nazorat ishi",
+        topic: "Tarmoq asoslari, protokollar, xavfsizlik",
+        questions: [
+          {q:"Tarmoqning asosiy vazifasi nima?",opts:["Internetga ulanish","Kompyuterlarni boshqarish","Faqat fayl almashish","Qurilmalar o'rtasida ma'lumot almashish va resurslarni ulash"],a:3},
+          {q:"Bit tezligi nima bilan o'lchanadi?",opts:["Hertz (Hz)","Bit/soniya (bps)","Bayt","Piksel"],a:1},
+          {q:"Paket kommutatsiyasi qanday ishlaydi?",opts:["Ma'lumotlarni uzatish uchun barcha portlarga tarqatadi","Ma'lumot paketlarini navbat bilan kompyuterga uzatadi","Fayllarni kompress qiladi","Paketlar asosida ma'lumotlarni uzatadi"],a:3},
+          {q:"Optik tola orqali ma'lumotlarni uzatishning asosiy afzalligi nima?",opts:["Ma'lumotlarni faqat qisqa masofalarda uzatadi","Faqat audio uzatish uchun mos","Juda kam kechikish va yuqori tezlik","Faqat uyali aloqa uchun ishlatiladi"],a:2},
+          {q:"Buferning vazifasi nima?",opts:["Tarmoqdagi kompyuterlarni ulash","Videoning uzluksiz ijrosini ta'minlash uchun ma'lumotlarni vaqtincha saqlash","Ma'lumotlarni shifrlash","Fayllarni to'g'ridan-to'g'ri uzatish"],a:1},
+          {q:"Tarmoq xavfsizligi qanday maqsadda ishlatiladi?",opts:["Ma'lumotlarning yo'qolishini oldini olish","Internet ulanishni tezlashtirish","Faqat viruslardan himoya qilish","Faqat tarmoq qurilmalarini boshqarish uchun"],a:0},
+          {q:"TCP/IP protokoli nima uchun ishlatiladi?",opts:["Faqat fayl almashish uchun","Video ma'lumotlarni uzatish uchun","Faqat elektron pochta uchun","Internet va tarmoqda ma'lumotlar uzatishni boshqarish"],a:3},
+          {q:"Wi-Fi qanday ulanish turiga kiradi?",opts:["Simli ulanish","Faqat mobil tarmoq","Simsiz Ethernet ulanishi","Faqat kompyuter uchun"],a:2},
+          {q:"Fayl serveri nima uchun ishlatiladi?",opts:["Faqat printerlarni ulash uchun","Foydalanuvchilarga fayllarni ulash va saqlash uchun","Faqat internet ulanishni boshqarish uchun","Viruslardan himoya qilish uchun"],a:1},
+          {q:"Laziza uy tarmog'ida nimaga ehtiyoj sezishi mumkin?",opts:["Wi-Fi router va simsiz ulanish nuqtasi","Faqat mobil telefon","Faqat simli ulanish","Faqat USB kabellar"],a:0},
+          {q:"Paket kommutatsiyasida ma'lumotlar qanday uzatiladi?",opts:["Ma'lumotlarni bir paketga joylab, uzatadi","Faqat qatorli uzatishni ta'minlaydi","Har bir ma'lumotni alohida uzatadi","Faqat grafik ma'lumotlarni uzatadi"],a:0},
+          {q:"Optik tolaning xavfsizligi qanday ta'minlanadi?",opts:["U faqat bir tomonlama ma'lumot uzatadi","U faqat qisqa masofalarda ishlaydi","U signallarni yashira olmaydi","Uning ichidagi yorug'lik signallari xakerlar hujumidan himoyalangan"],a:3},
+          {q:"Tarmoq protokoli nima uchun kerak?",opts:["Tarmoqdagi qurilmalar orasidagi aloqa va ma'lumot almashinuvini boshqarish","Faqat internetga ulanishni boshqarish uchun","Ma'lumotlarni fayl formatiga o'zgartirish uchun","Viruslardan himoya qilish uchun"],a:0},
+          {q:"Tarmoq o'tkazuvchanligi nimani anglatadi?",opts:["Tarmoqdagi qurilmalar sonini","Tarmoqning himoyalanish darajasini","Bir vaqtda uzatiladigan ma'lumotlar hajmini","Fayl hajmini"],a:2},
+          {q:"Routerning vazifasi nima?",opts:["Tarmoqdagi barcha ma'lumotlarni tekshirish va marshrutlash","Fayllarni siqish","Faqat audio ma'lumotlarni uzatish","Wi-Fi signallarini to'sish"],a:0}
+        ],
+        key: ["D","B","D","C","B","A","D","C","B","A","A","D","A","C","A"]
+      },
+      {
+        title: "5-Nazorat ishi",
+        topic: "Loyiha boshqaruvi, Gantt diagrammasi, CPA",
+        questions: [
+          {q:"Loyiha boshqaruvining birinchi bosqichi nima?",opts:["Loyiha konsepsiyasini ishlab chiqish va boshlash","Loyiha rejalashtirish","Loyihani bajarish","Loyiha yakunlash"],a:0},
+          {q:"Gantt diagrammasi nima uchun qo'llaniladi?",opts:["Loyihani grafik tarzda rejalashtirish va kuzatish uchun","Faqat loyiha byudjetini nazorat qilish uchun","Jamoa a'zolarini boshqarish uchun","Tizim xavfsizligini ta'minlash uchun"],a:0},
+          {q:"Loyihada kritik bosqichlar tahlili (CPA) qanday ahamiyatga ega?",opts:["Faqat resurslarni taqsimlash uchun ishlatiladi","Loyihaning eng muhim vazifalarini aniqlash va kuzatib borish uchun","Faqat loyiha xarajatlarini hisoblash uchun","Loyihani tugatish vaqtini aniqlash uchun"],a:1},
+          {q:"Prototiplash qanday jarayon?",opts:["Loyiha konsepsiyasini ishlab chiqish","Loyiha davomida dastlabki modelni yaratish va sinovdan o'tkazish","Jamoa a'zolarini boshqarish","Loyihani yakunlash"],a:1},
+          {q:"Gantt diagrammasidagi qizil rang nimani bildiradi?",opts:["Kritik bosqichlarni","Tugallanmagan vazifalarni","Rejadan ortda qolishni","Joriy vaqtni"],a:3},
+          {q:"CPA va Gantt diagrammasining o'xshashliklari nimada?",opts:["Har ikki diagramma byudjetni boshqaradi","Faqat vaqtni ko'rsatish uchun","Ikkalasi ham vazifalarni boshqarish vositasidir","Faqat jamoa a'zolarining yuklamasini ko'rsatadi"],a:2},
+          {q:"Halokatli holatlardan tiklanish boshqaruvi nimani anglatadi?",opts:["Loyihaning moliyaviy qismi bilan bog'liq vazifalarni","Loyihada yuzaga kelishi mumkin bo'lgan favqulodda holatlardan qayta tiklanishni boshqarish","Loyiha boshlanishini","Loyiha jamoasi boshqaruvini"],a:1},
+          {q:"Kompyuter yordamida loyihalash (CAD) qanday jarayon?",opts:["Loyiha byudjetini rejalashtirish","Jamoa a'zolarini boshqarish","Loyiha xavfsizligini ta'minlash","Loyihani raqamli vositalar orqali loyihalash va ishlab chiqarish"],a:3},
+          {q:"Loyiha boshqaruvida resurslar qanday taqsimlanadi?",opts:["Har bir vazifa uchun alohida belgilangan resurslar orqali","Faqat loyiha boshida taqsimlanadi","Resurslarni tizim avtomatik ravishda taqsimlaydi","Faqat yakuniy bosqichda taqsimlanadi"],a:0},
+          {q:"Loyiha yakunlash bosqichi nimani anglatadi?",opts:["Loyihaning barcha bosqichlarini amalga oshirish","Loyihani rejalashtirish bosqichini boshlash","Loyihani to'liq tugatish va natijalarni tasdiqlash","Jamoa a'zolarini qayta o'zgartirish"],a:2},
+          {q:"Loyiha boshqaruvi dasturlarining asosiy xususiyatlari qaysi?",opts:["Rejalashtirish, resurslar taqsimoti, grafik va tahlillar","Faqat vaqtni boshqarish","Faqat byudjetni nazorat qilish","Faqat jamoa a'zolarini boshqarish"],a:0},
+          {q:"Loyiha boshqaruvida PERT diagrammasi qanday qo'llaniladi?",opts:["Loyihada muhim va bog'liq bo'lgan vazifalarni aniqlash uchun","Faqat vaqtni kuzatish uchun","Jamoa a'zolarini tanlash uchun","Faqat xarajatlarni nazorat qilish uchun"],a:0},
+          {q:"Loyiha boshqaruvi jarayonida qaysi diagramma rejalashtirish uchun ishlatiladi?",opts:["Loyihani tugatish jadvali","PERT diagrammasi","Gantt diagrammasi","CPA"],a:2},
+          {q:"Tashkiliy xarajatlarni boshqarish qanday amalga oshiriladi?",opts:["Tashkiliy xarajatlarni hisoblamaslik","Faqat loyiha yakunida hisoblanadi","Resurslar va vaqtni to'g'ri rejalashtirish orqali","Jamoa a'zolarini o'zgartirish orqali"],a:2},
+          {q:"Loyiha boshqaruvi qaysi bosqichda tugallanadi?",opts:["Rejalashtirish","Har qanday bosqichda tugallanadi","Boshlang'ich bosqichda","Yakunlash bosqichida"],a:3}
+        ],
+        key: ["A","A","B","B","D","C","B","D","A","C","A","A","C","C","D"]
+      },
+      {
+        title: "6-Nazorat ishi",
+        topic: "Tizimdan foydalanish sikli, implementatsiya, sinov",
+        questions: [
+          {q:"Tizimdan foydalanish siklining birinchi bosqichi qanday ataladi?",opts:["Tahlil","Dasturlash","Sinov","Texnik xizmat ko'rsatish"],a:0},
+          {q:"'Implementatsiya' atamasi qanday jarayonni anglatadi?",opts:["Tizimni sinovdan o'tkazish","Yangi tizimni ishlab chiqish va joriy etish","Foydalanuvchi qo'llanmasini yaratish","Ma'lumotlarni himoya qilish"],a:1},
+          {q:"Tizimdan foydalanish siklida texnik xizmat ko'rsatish qanday amalga oshiriladi?",opts:["Tizimni tuzatish va yangilash jarayonlari orqali","Foydalanuvchilarga qo'llanma berish orqali","Faqat dasturiy ta'minotni o'rnatish orqali","Texnik xizmat ko'rsatilmaydi"],a:0},
+          {q:"DFD (Ma'lumotlar oqimi diagrammasi) qaysi jarayonni ko'rsatadi?",opts:["Tizim ichida ma'lumotlar qanday harakatlanishini","Tizimning ishlash muddatini","Tizimdagi texnik nosozliklarni","Foydalanuvchi interfeysini yaratish"],a:0},
+          {q:"Alfa sinov bosqichi nimani anglatadi?",opts:["Foydalanuvchi talablariga javob beradigan dastur yaratish","Tizimni to'liq joriy etish","Tizimning yakuniy sinovi","Ilk foydalanuvchilar tomonidan dastlabki versiyani sinash"],a:3},
+          {q:"Tizimdan foydalanish siklining eng oxirgi bosqichi qanday?",opts:["Tahlil","Sinov","Hujjatlashtirish","Texnik xizmat ko'rsatish"],a:3},
+          {q:"Tizimdan foydalanish siklida sinovning asosiy maqsadi nima?",opts:["Tizimning ishlashini diagramma orqali ko'rsatish","Foydalanuvchilarni tizim bilan tanishtirish","Yangi tizimning foydalanuvchi talablariga mosligini tekshirish","Faqat texnik xizmat ko'rsatish"],a:2},
+          {q:"Paralel implementatsiya qanday amalga oshiriladi?",opts:["Foydalanuvchi tomonidan tizim boshqariladi","Yangi tizim joriy qilinadi, eski tizim o'chiriladi","Yangi va eski tizimlar bir vaqtda ishlaydi","Sinovdan o'tkazmasdan joriy etiladi"],a:2},
+          {q:"Hujjatlashtirish nima uchun muhim?",opts:["Foydalanuvchi qo'llanmasini yaratish uchun","Tizimda yuzaga keladigan muammolarni bartaraf etish uchun","Foydalanuvchi talablarini aniqlash uchun","Dasturiy ta'minotni ishlab chiqish uchun"],a:1},
+          {q:"Texnik xizmat ko'rsatish jarayonida qanday nosozliklar bartaraf etiladi?",opts:["Tizimni ishlamay qolishidan oldingi barcha texnik nosozliklar","Foydalanuvchilarning so'rovlari","Texnik xizmat ko'rsatish shart emas","Tizimning ko'rinishi bilan bog'liq muammolar"],a:0},
+          {q:"Tahlil bosqichi qanday maqsadda amalga oshiriladi?",opts:["Yangi dasturiy ta'minot yaratish uchun","Tizimni joriy etish uchun","Texnik xizmat ko'rsatish uchun","Joriy tizim va yangi tizim talablarini aniqlash uchun"],a:3},
+          {q:"Sinov natijalari nima uchun kerak?",opts:["Foydalanuvchi talablariga mos kelish yoki kelmasligini baholash uchun","Faqat hujjat yaratish uchun","Tizimni sinovdan o'tkazmasdan joriy qilish uchun","Tizimni almashtirish uchun"],a:0},
+          {q:"Tizim spetsifikatsiyasi nima uchun kerak?",opts:["Foydalanuvchilarni o'qitish uchun","Foydalanuvchilarga qo'llanma berish uchun","Texnik va dasturiy ta'minot talablarini aniqlash uchun","Tizimni sinash uchun"],a:2},
+          {q:"Hujjatlashtirish jarayonida qanday hujjatlar yaratiladi?",opts:["Texnik qo'llanmalar va foydalanuvchi qo'llanmalari","Faqat foydalanuvchi qo'llanmalari","Faqat texnik hujjatlar","Hech qanday hujjat yaratilmaydi"],a:0},
+          {q:"Qaysi bosqichda foydalanuvchi qo'llanmasi tayyorlanadi?",opts:["Texnik xizmat ko'rsatish bosqichida","Sinov bosqichida","Implementatsiya bosqichida","Dasturlash bosqichida"],a:2}
+        ],
+        key: ["A","B","A","A","D","D","C","C","B","A","D","A","C","A","C"]
+      },
+      {
+        title: "7-Nazorat ishi",
+        topic: "Elektron jadvallar, ma'lumotlar bazasi, taqdimot",
+        questions: [
+          {q:"Elektron jadvallar qanday maqsadlarda ishlatiladi?",opts:["Matnli hujjatlarni tahrirlash","Tasvirlar yaratish","Audio fayllarni tahrirlash","Hisoblash va ma'lumotlarni modellashtirish"],a:3},
+          {q:"Elektron jadvaldagi ma'lumotlar qanday saqlanadi?",opts:["Faqat matn sifatida","Qatorlar va ustunlar kesishmasidagi kataklarda","Grafik shaklda","Kodlangan belgilar sifatida"],a:1},
+          {q:"Elektron jadvallarda formulalar qanday ishlaydi?",opts:["Matnlarni hisoblashda","Ma'lumotlarni avtomatik qayta hisoblashda","Ma'lumotlarni filtrlashda","Grafik chizishda"],a:1},
+          {q:"Qaysi funksiyalar elektron jadvalda ma'lumotlarni qidirish uchun ishlatiladi?",opts:["SUM va AVERAGE","CONCATENATE va LEFT","MIN va MAX","IF va VLOOKUP"],a:3},
+          {q:"Elektron jadvallar yordamida qanday diagrammalar tuziladi?",opts:["Matnli grafikalar","Chiziqli va ustun diagrammalar","Faqat pie diagrammalar","Rasm chizmalari"],a:1},
+          {q:"Ma'lumotlar bazasi nima?",opts:["Ma'lumotlarni to'plash va boshqarish tizimi","Elektron hujjatlar yig'indisi","Grafik tasvirlar saqlash joyi","Video va audio fayllarni boshqarish tizimi"],a:0},
+          {q:"Qaysi ma'lumotlar turi ma'lumotlar bazasida saqlanadi?",opts:["Matn, raqam va sanalar","Faqat rasmlar","Faqat audio fayllar","Faqat raqamli belgilar"],a:0},
+          {q:"Ma'lumotlar bazasida birlamchi kalit nima uchun ishlatiladi?",opts:["Jadvaldagi ma'lumotlarni kodlash uchun","Fayllarni eksport qilish uchun","Jadvaldagi har bir yozuvni unikallashtirish uchun","Ma'lumotlarni avtomatik o'chirish uchun"],a:2},
+          {q:"Ma'lumotlar bazasidagi atribut nima?",opts:["Grafik tasvir","Ma'lumotlarni o'chirish","Jadvaldagi ustun","Grafik chizma"],a:2},
+          {q:"Ma'lumotlar bazasida so'rovlar nima uchun ishlatiladi?",opts:["Ma'lumotlarni ko'rish va tahlil qilish uchun","Grafiklar yaratish uchun","Matnli hujjatlarni yaratish uchun","Video fayllarni boshqarish uchun"],a:0},
+          {q:"Ma'lumotlarni taqdim etish uchun qanday dasturlar ishlatiladi?",opts:["Matn muharrirlari","Video tahrir dasturlari","Faqat grafik muharrirlar","Taqdimot dasturlari"],a:3},
+          {q:"Taqdimotda grafiklardan foydalanishning asosiy maqsadi nima?",opts:["Ma'lumotlarni o'chirish","Ma'lumotlarni vizual tarzda ifodalash","Faqat tasvirlarni saqlash","Matnni formatlash"],a:1},
+          {q:"Ma'lumotlarni taqdim etishning qanday usullari mavjud?",opts:["Matnli hujjatlar va grafiklar","Faqat audio fayllar","Faqat video fayllar","Faqat raqamli belgilar"],a:0},
+          {q:"Diagrammalar ma'lumotlarni qanday ko'rinishda taqdim etadi?",opts:["Tasodifiy shaklda","Kodlangan belgilar ko'rinishida","Matn ko'rinishida","Vizual grafiklar shaklida"],a:3},
+          {q:"Ma'lumotlarni taqdim etishda animatsiyalardan foydalanishning asosiy maqsadi nima?",opts:["Ma'lumotlarni yanada ko'rinadigan va tushunarli qilish","Matnni o'zgartirish","Grafiklarni animatsiyalash","Ma'lumotlarni o'chirish"],a:0}
+        ],
+        key: ["D","B","B","D","B","A","A","C","C","A","D","B","A","D","A"]
+      },
+      {
+        title: "8-Nazorat ishi",
+        topic: "JavaScript asoslari, interaktivlik, validatsiya",
+        questions: [
+          {q:"Veb sahifaga interaktivlik qo'shish uchun qaysi dasturlash tili ishlatiladi?",opts:["HTML","CSS","JavaScript","SQL"],a:2},
+          {q:"JavaScript nima uchun ishlatiladi?",opts:["Veb sahifaga dizayn berish uchun","Veb sahifaga interaktivlik qo'shish uchun","Ma'lumotlarni saqlash uchun","Raqamli tasvirlar yaratish uchun"],a:1},
+          {q:"JavaScript yordamida HTML faylga qanday ma'lumot kiritiladi?",opts:["Kod yozish orqali","Tasvirlar qo'shish orqali","Faqat matn qo'shish orqali","Foydalanuvchi tomonidan tanlangan variant asosida"],a:3},
+          {q:"HTML elementlariga JavaScript kodini qanday qo'shish mumkin?",opts:["HTML faylida 'script' tegi orqali","CSS faylida qo'shish","Ma'lumotlar bazasidan yuklash","Veb server orqali"],a:0},
+          {q:"JavaScriptda validatsiya nima uchun ishlatiladi?",opts:["Foydalanuvchi kiritgan ma'lumotlarni tekshirish uchun","Tasvirlar va grafiklarni o'zgartirish uchun","Veb sahifa rangini o'zgartirish uchun","Ma'lumotlar bazasini boshqarish uchun"],a:0},
+          {q:"'Array' tushunchasi JavaScriptda nimani anglatadi?",opts:["Matn fayli","Fayllar to'plami","Elementlar to'plami","Tasvirlar"],a:2},
+          {q:"JavaScriptda 'for' tsikli qanday ishlatiladi?",opts:["Ma'lumotlarni ro'yxat shaklida taqdim etish","Belgilangan miqdorda kodni qayta ishlash","Faqat bitta amal bajarish","Ma'lumotlarni to'plash"],a:1},
+          {q:"JavaScriptda shartli buyruqlar qanday ishlatiladi?",opts:["Faqat formalarni to'ldirishda","Turli shartlarga asoslangan harakatlar uchun","Faqat sahifa fonini o'zgartirish uchun","Faqat HTML sahifalarini yaratish uchun"],a:1},
+          {q:"JavaScriptda 'while' tsikli qanday ishlaydi?",opts:["Shart to'g'ri bo'lganda tsikl ishlaydi","Foydalanuvchi tugmani bosganda tsikl ishlaydi","Har doim ishlaydi","Faqat matnli fayllarda ishlatiladi"],a:0},
+          {q:"JavaScriptda funksiya nima uchun ishlatiladi?",opts:["Faqat raqamlarni hisoblash uchun","Kiritilgan ma'lumotlarni qayta ishlash va natijani chiqarish uchun","HTML elementlarini yaratish uchun","Sahifaga grafiklar qo'shish uchun"],a:1},
+          {q:"JavaScriptda qanday ma'lumotlar turi mavjud?",opts:["Faqat raqamlar","Faqat grafikalar","Faqat obyektlar","Matn, raqam va obyektlar"],a:3},
+          {q:"JavaScriptda qanday validatsiya turlari mavjud?",opts:["Fayllarni himoyalash","Ma'lumotlar formati, uzunligi va turi validatsiyasi","Foydalanuvchilarni ro'yxatga olish","Grafik yaratish"],a:1},
+          {q:"'if' operatori qanday vazifani bajaradi?",opts:["Faqat to'g'ri ma'lumotlarni chiqaradi","Sahifa fonini o'zgartiradi","Shart bajarilsa, kodning bir qismini ishlatadi","Foydalanuvchilarni ro'yxatga oladi"],a:2},
+          {q:"JavaScriptda qanday ma'lumot turi to'g'ri yoki noto'g'ri qiymat qaytaradi?",opts:["Obyekt turi","Boolean turi","String turi","Raqamlar turi"],a:1},
+          {q:"JavaScriptda massiv nima uchun ishlatiladi?",opts:["Bir xil turdagi ko'plab ma'lumotlarni saqlash uchun","Faqat bir nechta raqamlarni saqlash uchun","Foydalanuvchi ma'lumotlarini qayta ishlash uchun","Faqat grafikalarni ko'rish uchun"],a:0}
+        ],
+        key: ["C","B","D","A","A","C","B","B","A","B","D","B","C","B","A"]
+      }
+    ]
   }
 };
 
