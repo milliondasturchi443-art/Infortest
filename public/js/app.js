@@ -655,8 +655,23 @@ async function loadLeaderboard() {
   try {
     var res = await fetch(API + '/api/quiz/leaderboard');
     var data = await res.json();
+
+    // Apply grade filter
+    var filterEl = document.getElementById('leaderboardGradeFilter');
+    var filterVal = filterEl ? filterEl.value : '';
+    if (filterVal) {
+      data = data.filter(function (u) {
+        if (!u.grade) return false;
+        var gradeNum = u.grade.replace(/\D/g, '').replace(/-.*/, '');
+        if (!gradeNum) gradeNum = u.grade.split('-')[0];
+        return gradeNum === filterVal || u.grade === filterVal || u.grade.indexOf(filterVal + '-') === 0;
+      });
+      // Re-rank after filtering
+      data.forEach(function (u, i) { u.rank = i + 1; });
+    }
+
     if (data.length === 0) {
-      container.innerHTML = '<p style="text-align:center;color:var(--muted)">Hali hech kim test topshirmadi</p>';
+      container.innerHTML = '<p style="text-align:center;color:var(--muted)">' + (filterVal ? filterVal + '-sinf uchun natijalar topilmadi' : 'Hali hech kim test topshirmadi') + '</p>';
       return;
     }
     var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th><th>Baho</th></tr></thead><tbody>';
