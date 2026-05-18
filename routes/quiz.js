@@ -98,10 +98,19 @@ router.post('/submit', async (req, res) => {
       return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
     }
 
+    // Handle retakes: if user already did this test, subtract old contribution
+    const oldPct = user.results.get(key);
+    if (oldPct != null) {
+      // Retake: subtract old score, don't increment totalTests
+      const oldScore = Math.round((oldPct / 100) * total);
+      user.totalCorrect = (user.totalCorrect || 0) - oldScore + score;
+    } else {
+      // First attempt
+      user.totalTests += 1;
+      user.totalCorrect = (user.totalCorrect || 0) + score;
+      user.totalQuestions = (user.totalQuestions || 0) + total;
+    }
     user.results.set(key, pct);
-    user.totalTests += 1;
-    user.totalCorrect += score;
-    user.totalQuestions += total;
 
     // XP system: base 10 XP + bonus for high scores
     let xpEarned = 10;
@@ -177,25 +186,31 @@ router.get('/results/:userId', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
   try {
     const users = await User.find({ totalTests: { $gt: 0 } })
-      .select('name school region grade totalTests totalCorrect totalQuestions xp level streak');
+      .select('name school region grade totalTests totalCorrect totalQuestions results xp level streak');
 
     const sorted = users
-      .map((u) => ({
-        name: u.name,
-        school: u.school,
-        region: u.region,
-        grade: u.grade,
-        totalTests: u.totalTests,
-        totalCorrect: u.totalCorrect,
-        totalQuestions: u.totalQuestions,
-        avgPct:
-          u.totalQuestions > 0
-            ? Math.round((u.totalCorrect / u.totalQuestions) * 100)
-            : 0,
-        xp: u.xp || 0,
-        level: u.level || 1,
-        streak: u.streak || 0,
-      }))
+      .map((u) => {
+        // Compute avgPct from results Map (unique test percentages) for accuracy
+        let avgPct = 0;
+        if (u.results && u.results.size > 0) {
+          let sum = 0;
+          u.results.forEach((pct) => { sum += pct; });
+          avgPct = Math.round(sum / u.results.size);
+        } else if (u.totalQuestions > 0) {
+          avgPct = Math.round((u.totalCorrect / u.totalQuestions) * 100);
+        }
+        return {
+          name: u.name,
+          school: u.school,
+          region: u.region,
+          grade: u.grade,
+          totalTests: u.results ? u.results.size : u.totalTests,
+          avgPct,
+          xp: u.xp || 0,
+          level: u.level || 1,
+          streak: u.streak || 0,
+        };
+      })
       .sort((a, b) => b.avgPct - a.avgPct)
       .slice(0, 50);
 
