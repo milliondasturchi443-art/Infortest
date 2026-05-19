@@ -686,11 +686,20 @@ async function loadLeaderboard() {
       });
     }
 
+    // Apply nazorat ishi filter
+    var testEl = document.getElementById('leaderboardTestFilter');
+    var testVal = testEl ? testEl.value : '';
+    if (testVal) {
+      data = data.filter(function (u) {
+        return u.tests && u.tests[testVal] && u.tests[testVal].count > 0;
+      });
+    }
+
     // Re-sort and re-rank after filtering
     data.sort(function (a, b) { return b.avgPct - a.avgPct; });
     data.forEach(function (u, i) { u.rank = i + 1; });
 
-    var hasFilter = filterVal || testSinfVal || subjectVal;
+    var hasFilter = filterVal || testSinfVal || subjectVal || testVal;
     if (data.length === 0) {
       container.innerHTML = '<p style="text-align:center;color:var(--muted)">' + (hasFilter ? 'Filtr bo\'yicha natijalar topilmadi' : 'Hali hech kim test topshirmadi') + '</p>';
       return;
@@ -702,6 +711,7 @@ async function loadLeaderboard() {
     var html = '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Testlar</th>';
     html += '<th>\uD83D\uDCBB Inf</th><th>\uD83D\uDCD0 Mat</th><th>\uD83D\uDD2C Fiz</th><th>\uD83E\uDDEA Kim</th>';
     if (testSinfVal) html += '<th>' + testSinfVal + '-sinf</th>';
+    if (testVal) html += '<th>' + testVal + '-NI</th>';
     html += '<th>Natija</th><th>Baho</th></tr></thead><tbody>';
 
     data.forEach(function (u) {
@@ -727,6 +737,10 @@ async function loadLeaderboard() {
       if (testSinfVal) {
         var sinfInfo = u.sinfs && u.sinfs[testSinfVal] ? u.sinfs[testSinfVal] : null;
         html += '<td>' + (sinfInfo ? sinfInfo.count + ' (' + sinfInfo.avg + '%)' : '\u2014') + '</td>';
+      }
+      if (testVal) {
+        var testInfo = u.tests && u.tests[testVal] ? u.tests[testVal] : null;
+        html += '<td>' + (testInfo ? testInfo.count + ' (' + testInfo.avg + '%)' : '\u2014') + '</td>';
       }
       html += '<td><strong>' + u.avgPct + '%</strong></td>';
       html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:8px;font-weight:800;color:#fff;background:' + gradeColor + '">' + grade + '</span></td>';

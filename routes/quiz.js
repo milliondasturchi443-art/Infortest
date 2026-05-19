@@ -190,9 +190,10 @@ router.get('/leaderboard', async (req, res) => {
 
     const sorted = users
       .map((u) => {
-        // Parse results keys (e.g. "informatika_9-sinf_0") to build per-subject and per-sinf stats
+        // Parse results keys (e.g. "informatika_9-sinf_0") to build per-subject, per-sinf and per-test stats
         const subjectStats = {};
         const sinfStats = {};
+        const testStats = {};
         let totalSum = 0;
         let totalCount = 0;
 
@@ -204,6 +205,7 @@ router.get('/leaderboard', async (req, res) => {
             const subj = parts[0] || 'informatika';
             const sinf = parts[1] || '';
             const sinfNum = sinf.replace(/\D/g, '');
+            const testIdx = parts[2] != null ? parseInt(parts[2], 10) : -1;
 
             if (!subjectStats[subj]) subjectStats[subj] = { count: 0, sum: 0 };
             subjectStats[subj].count++;
@@ -213,6 +215,13 @@ router.get('/leaderboard', async (req, res) => {
               if (!sinfStats[sinfNum]) sinfStats[sinfNum] = { count: 0, sum: 0 };
               sinfStats[sinfNum].count++;
               sinfStats[sinfNum].sum += pct;
+            }
+
+            if (testIdx >= 0) {
+              const tKey = String(testIdx + 1);
+              if (!testStats[tKey]) testStats[tKey] = { count: 0, sum: 0 };
+              testStats[tKey].count++;
+              testStats[tKey].sum += pct;
             }
           });
         }
@@ -242,6 +251,13 @@ router.get('/leaderboard', async (req, res) => {
           streak: u.streak || 0,
           subjects,
           sinfs,
+          tests: (() => {
+            const t = {};
+            for (const [k, d] of Object.entries(testStats)) {
+              t[k] = { count: d.count, avg: Math.round(d.sum / d.count) };
+            }
+            return t;
+          })(),
         };
       })
       .sort((a, b) => b.avgPct - a.avgPct)
