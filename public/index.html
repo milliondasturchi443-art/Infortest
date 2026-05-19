@@ -200,7 +200,7 @@
           <h2 class="section-title">🏅 Eng yaxshi natijalar</h2>
           <p class="section-desc">Barcha foydalanuvchilar reytingi — avtomatik yangilanadi</p>
           <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label style="font-weight:700;font-size:.85rem">Sinf bo'yicha filtr:</label>
+            <label style="font-weight:700;font-size:.85rem">O'quvchi sinfi:</label>
             <select id="leaderboardGradeFilter" onchange="loadLeaderboard()" style="padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer">
               <option value="">Barchasi</option>
               <option value="5">5-sinf</option>
@@ -210,6 +210,25 @@
               <option value="9">9-sinf</option>
               <option value="10">10-sinf</option>
               <option value="11">11-sinf</option>
+            </select>
+            <label style="font-weight:700;font-size:.85rem;margin-left:8px">Test sinfi:</label>
+            <select id="leaderboardTestSinfFilter" onchange="loadLeaderboard()" style="padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer">
+              <option value="">Barchasi</option>
+              <option value="5">5-sinf</option>
+              <option value="6">6-sinf</option>
+              <option value="7">7-sinf</option>
+              <option value="8">8-sinf</option>
+              <option value="9">9-sinf</option>
+              <option value="10">10-sinf</option>
+              <option value="11">11-sinf</option>
+            </select>
+            <label style="font-weight:700;font-size:.85rem;margin-left:8px">Fan:</label>
+            <select id="leaderboardSubjectFilter" onchange="loadLeaderboard()" style="padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer">
+              <option value="">Barchasi</option>
+              <option value="informatika">Informatika</option>
+              <option value="matematika">Matematika</option>
+              <option value="fizika">Fizika</option>
+              <option value="kimyo">Kimyo</option>
             </select>
           </div>
           <div class="content-card"><div id="leaderboardContent"></div></div>

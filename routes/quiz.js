@@ -190,29 +190,62 @@ router.get('/leaderboard', async (req, res) => {
 
     const sorted = users
       .map((u) => {
-        // Compute avgPct from results Map (unique test percentages) for accuracy
-        let avgPct = 0;
+        // Parse results keys (e.g. "informatika_9-sinf_0") to build per-subject and per-sinf stats
+        const subjectStats = {};
+        const sinfStats = {};
+        let totalSum = 0;
+        let totalCount = 0;
+
         if (u.results && u.results.size > 0) {
-          let sum = 0;
-          u.results.forEach((pct) => { sum += pct; });
-          avgPct = Math.round(sum / u.results.size);
-        } else if (u.totalQuestions > 0) {
-          avgPct = Math.round((u.totalCorrect / u.totalQuestions) * 100);
+          u.results.forEach((pct, key) => {
+            totalSum += pct;
+            totalCount++;
+            const parts = key.split('_');
+            const subj = parts[0] || 'informatika';
+            const sinf = parts[1] || '';
+            const sinfNum = sinf.replace(/\D/g, '');
+
+            if (!subjectStats[subj]) subjectStats[subj] = { count: 0, sum: 0 };
+            subjectStats[subj].count++;
+            subjectStats[subj].sum += pct;
+
+            if (sinfNum) {
+              if (!sinfStats[sinfNum]) sinfStats[sinfNum] = { count: 0, sum: 0 };
+              sinfStats[sinfNum].count++;
+              sinfStats[sinfNum].sum += pct;
+            }
+          });
         }
+
+        const avgPct = totalCount > 0 ? Math.round(totalSum / totalCount) : 0;
+
+        // Build compact subject breakdown
+        const subjects = {};
+        for (const [s, d] of Object.entries(subjectStats)) {
+          subjects[s] = { count: d.count, avg: Math.round(d.sum / d.count) };
+        }
+        // Build compact sinf breakdown
+        const sinfs = {};
+        for (const [s, d] of Object.entries(sinfStats)) {
+          sinfs[s] = { count: d.count, avg: Math.round(d.sum / d.count) };
+        }
+
         return {
           name: u.name,
           school: u.school,
           region: u.region,
           grade: u.grade,
-          totalTests: u.results ? u.results.size : u.totalTests,
+          totalTests: totalCount || u.totalTests,
           avgPct,
           xp: u.xp || 0,
           level: u.level || 1,
           streak: u.streak || 0,
+          subjects,
+          sinfs,
         };
       })
       .sort((a, b) => b.avgPct - a.avgPct)
-      .slice(0, 50);
+      .slice(0, 100);
 
     const leaderboard = sorted.map((u, i) => ({ rank: i + 1, ...u }));
 

@@ -656,7 +656,7 @@ async function loadLeaderboard() {
     var res = await fetch(API + '/api/quiz/leaderboard');
     var data = await res.json();
 
-    // Apply grade filter
+    // Apply student grade filter
     var filterEl = document.getElementById('leaderboardGradeFilter');
     var filterVal = filterEl ? filterEl.value : '';
     if (filterVal) {
@@ -666,33 +666,73 @@ async function loadLeaderboard() {
         if (!gradeNum) gradeNum = u.grade.split('-')[0];
         return gradeNum === filterVal || u.grade === filterVal || u.grade.indexOf(filterVal + '-') === 0;
       });
-      // Re-rank after filtering
-      data.forEach(function (u, i) { u.rank = i + 1; });
     }
 
+    // Apply test sinf filter (which class's tests they solved)
+    var testSinfEl = document.getElementById('leaderboardTestSinfFilter');
+    var testSinfVal = testSinfEl ? testSinfEl.value : '';
+    if (testSinfVal) {
+      data = data.filter(function (u) {
+        return u.sinfs && u.sinfs[testSinfVal] && u.sinfs[testSinfVal].count > 0;
+      });
+    }
+
+    // Apply subject filter
+    var subjectEl = document.getElementById('leaderboardSubjectFilter');
+    var subjectVal = subjectEl ? subjectEl.value : '';
+    if (subjectVal) {
+      data = data.filter(function (u) {
+        return u.subjects && u.subjects[subjectVal] && u.subjects[subjectVal].count > 0;
+      });
+    }
+
+    // Re-sort and re-rank after filtering
+    data.sort(function (a, b) { return b.avgPct - a.avgPct; });
+    data.forEach(function (u, i) { u.rank = i + 1; });
+
+    var hasFilter = filterVal || testSinfVal || subjectVal;
     if (data.length === 0) {
-      container.innerHTML = '<p style="text-align:center;color:var(--muted)">' + (filterVal ? filterVal + '-sinf uchun natijalar topilmadi' : 'Hali hech kim test topshirmadi') + '</p>';
+      container.innerHTML = '<p style="text-align:center;color:var(--muted)">' + (hasFilter ? 'Filtr bo\'yicha natijalar topilmadi' : 'Hali hech kim test topshirmadi') + '</p>';
       return;
     }
-    var html = '<table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Maktab</th><th>Lv.</th><th>Streak</th><th>Testlar</th><th>Natija</th><th>Baho</th></tr></thead><tbody>';
+
+    var subjectNames = {informatika:'Inf',matematika:'Mat',fizika:'Fiz',kimyo:'Kim'};
+    var subjectIcons = {informatika:'\uD83D\uDCBB',matematika:'\uD83D\uDCD0',fizika:'\uD83D\uDD2C',kimyo:'\uD83E\uDDEA'};
+
+    var html = '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Testlar</th>';
+    html += '<th>\uD83D\uDCBB Inf</th><th>\uD83D\uDCD0 Mat</th><th>\uD83D\uDD2C Fiz</th><th>\uD83E\uDDEA Kim</th>';
+    if (testSinfVal) html += '<th>' + testSinfVal + '-sinf</th>';
+    html += '<th>Natija</th><th>Baho</th></tr></thead><tbody>';
+
     data.forEach(function (u) {
       var rankClass = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
       var medal = u.rank === 1 ? '\uD83E\uDD47' : u.rank === 2 ? '\uD83E\uDD48' : u.rank === 3 ? '\uD83E\uDD49' : u.rank;
       var grade = getGrade(u.avgPct);
       var gradeColor = getGradeColor(grade);
+
+      var infC = u.subjects && u.subjects.informatika ? u.subjects.informatika.count : 0;
+      var matC = u.subjects && u.subjects.matematika ? u.subjects.matematika.count : 0;
+      var fizC = u.subjects && u.subjects.fizika ? u.subjects.fizika.count : 0;
+      var kimC = u.subjects && u.subjects.kimyo ? u.subjects.kimyo.count : 0;
+
       html += '<tr class="lb-row">';
       html += '<td><span class="lb-rank ' + rankClass + '">' + medal + '</span></td>';
       html += '<td>' + u.name + '</td>';
       html += '<td><span style="font-weight:700;color:var(--primary)">' + (u.grade || '\u2014') + '</span></td>';
-      html += '<td><span class="lb-school">' + (u.school || '\u2014') + '</span></td>';
-      html += '<td><span class="lb-level">' + (u.level || 1) + '</span></td>';
-      html += '<td>' + (u.streak > 0 ? '\uD83D\uDD25' + u.streak : '\u2014') + '</td>';
-      html += '<td>' + u.totalTests + '</td>';
+      html += '<td><strong>' + u.totalTests + '</strong></td>';
+      html += '<td>' + (infC > 0 ? infC : '\u2014') + '</td>';
+      html += '<td>' + (matC > 0 ? matC : '\u2014') + '</td>';
+      html += '<td>' + (fizC > 0 ? fizC : '\u2014') + '</td>';
+      html += '<td>' + (kimC > 0 ? kimC : '\u2014') + '</td>';
+      if (testSinfVal) {
+        var sinfInfo = u.sinfs && u.sinfs[testSinfVal] ? u.sinfs[testSinfVal] : null;
+        html += '<td>' + (sinfInfo ? sinfInfo.count + ' (' + sinfInfo.avg + '%)' : '\u2014') + '</td>';
+      }
       html += '<td><strong>' + u.avgPct + '%</strong></td>';
       html += '<td><span style="display:inline-block;padding:4px 12px;border-radius:8px;font-weight:800;color:#fff;background:' + gradeColor + '">' + grade + '</span></td>';
       html += '</tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     container.innerHTML = html;
   } catch (err) {
     container.innerHTML = '<p style="text-align:center;color:var(--red)">Xatolik yuz berdi</p>';
