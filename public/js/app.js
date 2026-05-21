@@ -336,6 +336,7 @@ function showDashTab(tab, el) {
   if (tab === 'achievements') renderAchievements();
   if (tab === 'history') renderHistory();
   if (tab === 'daily') loadDailyChallenge();
+  if (tab === 'games') { updateGameStats(); loadGameLeaderboard(); }
 
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('open');
@@ -1301,6 +1302,66 @@ var gameTimer = null;
 var gameScore = 0;
 var gameRound = 0;
 
+var GAME_RANKS = [
+  {min:0,name:'Yangi o\'yinchi',icon:'🌱'},
+  {min:50,name:'Shogird',icon:'📖'},
+  {min:150,name:'O\'quvchi',icon:'🎓'},
+  {min:300,name:'Bilimdon',icon:'🧠'},
+  {min:500,name:'Ustoz',icon:'👨‍🏫'},
+  {min:800,name:'Professor',icon:'🏅'},
+  {min:1200,name:'Akademik',icon:'🎖️'},
+  {min:2000,name:'Daho',icon:'👑'}
+];
+function getGameRank(pts) {
+  var r = GAME_RANKS[0];
+  for (var i = 0; i < GAME_RANKS.length; i++) { if (pts >= GAME_RANKS[i].min) r = GAME_RANKS[i]; }
+  return r;
+}
+
+function updateGameStats() {
+  if (!currentUser) return;
+  var pts = currentUser.gamePoints || 0;
+  var played = currentUser.gamesPlayed || 0;
+  var rank = getGameRank(pts);
+  var pe = document.getElementById('gsPoints'); if (pe) pe.textContent = pts;
+  var re = document.getElementById('gsRank'); if (re) re.textContent = rank.icon + ' ' + rank.name;
+  var ge = document.getElementById('gsPlayed'); if (ge) ge.textContent = played;
+}
+
+async function saveGameScore(points) {
+  if (!currentUser) return;
+  try {
+    var res = await fetch(API + '/api/quiz/game-score', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ userId: currentUser.id, points: points })
+    });
+    var data = await res.json();
+    if (res.ok) { currentUser.gamePoints = data.gamePoints; currentUser.gamesPlayed = data.gamesPlayed; }
+  } catch (err) { console.error('Save game score error:', err); }
+}
+
+async function loadGameLeaderboard() {
+  var el = document.getElementById('gameLeaderboard');
+  if (!el) return;
+  try {
+    var res = await fetch(API + '/api/quiz/game-leaderboard');
+    var data = await res.json();
+    if (data.length === 0) { el.innerHTML = '<p style="color:var(--muted);text-align:center">Hali hech kim o\'ynamadi</p>'; return; }
+    var html = '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Ochkolar</th><th>O\'yinlar</th><th>Zvanie</th></tr></thead><tbody>';
+    data.forEach(function (u) {
+      var rc = u.rank === 1 ? 'gold' : u.rank === 2 ? 'silver' : u.rank === 3 ? 'bronze' : '';
+      var medal = u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank;
+      var rank = getGameRank(u.gamePoints);
+      html += '<tr class="lb-row"><td><span class="lb-rank ' + rc + '">' + medal + '</span></td>';
+      html += '<td>' + u.name + '</td><td>' + (u.grade || '—') + '</td>';
+      html += '<td><strong>' + u.gamePoints + '</strong></td><td>' + u.gamesPlayed + '</td>';
+      html += '<td>' + rank.icon + ' ' + rank.name + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+  } catch (err) { el.innerHTML = '<p style="color:var(--red)">Xatolik</p>'; }
+}
+
 function startGame(type) {
   var gc = document.getElementById('gamesContent');
   var ga = document.getElementById('gameArea');
@@ -1312,6 +1373,10 @@ function startGame(type) {
   else if (type === 'math') startMathGame();
   else if (type === 'typing') startTypingGame();
   else if (type === 'quiz') startQuizGame();
+  else if (type === 'snake') startSnakeGame();
+  else if (type === 'reaction') startReactionGame();
+  else if (type === 'color') startColorGame();
+  else if (type === 'sequence') startSequenceGame();
 }
 
 function exitGame() {
@@ -1321,6 +1386,21 @@ function exitGame() {
   gc.style.display = 'block';
   ga.style.display = 'none';
   ga.innerHTML = '';
+  updateGameStats();
+  loadGameLeaderboard();
+}
+
+function showGameResult(title, score, max, points, replayFn) {
+  saveGameScore(points);
+  var ga = document.getElementById('gameArea');
+  var rank = getGameRank((currentUser ? currentUser.gamePoints || 0 : 0) + points);
+  ga.innerHTML = '<div class="game-area" style="text-align:center">' +
+    '<h2 style="font-size:1.5rem;margin-bottom:8px">' + title + '</h2>' +
+    '<p style="font-size:2rem;font-weight:900;color:var(--primary);margin:12px 0">' + score + (max ? '/' + max : '') + '</p>' +
+    '<p style="color:var(--green);font-weight:700;margin-bottom:4px">+' + points + ' ochko</p>' +
+    '<p style="color:var(--muted);font-size:.85rem;margin-bottom:20px">' + rank.icon + ' ' + rank.name + '</p>' +
+    '<button class="btn btn-sm btn-primary" onclick="' + replayFn + '">Qayta o\'ynash</button> ' +
+    '<button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
 }
 
 // ─── MEMORY GAME ───
@@ -1328,16 +1408,14 @@ function startMemoryGame() {
   var icons = ['📐','🔬','💻','🧪','📊','📚','🎯','⚡'];
   var cards = icons.concat(icons);
   cards.sort(function () { return Math.random() - 0.5; });
-  var flipped = []; var matched = 0; var moves = 0;
   var ga = document.getElementById('gameArea');
-  var html = '<div class="game-area"><div class="game-score-bar"><span>Xotira o\'yini</span><span id="memMoves">Urinishlar: 0</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  var html = '<div class="game-area"><div class="game-score-bar"><span>🧠 Xotira o\'yini</span><span id="memMoves">Urinishlar: 0</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
   html += '<div class="game-board" style="grid-template-columns:repeat(4,1fr);max-width:400px;margin:0 auto">';
   for (var i = 0; i < cards.length; i++) {
     html += '<div class="game-cell" data-idx="' + i + '" data-icon="' + cards[i] + '" onclick="flipCard(this)" style="font-size:1.8rem;min-height:70px">?</div>';
   }
   html += '</div></div>';
   ga.innerHTML = html;
-
   window.memFlipped = []; window.memMatched = 0; window.memMoves = 0; window.memLocked = false;
 }
 function flipCard(el) {
@@ -1355,7 +1433,8 @@ function flipCard(el) {
       window.memFlipped = [];
       window.memMatched += 2;
       if (window.memMatched >= 16) {
-        setTimeout(function () { alert('Tabriklaymiz! ' + window.memMoves + ' urinishda tamomladingiz!'); }, 300);
+        var pts = Math.max(5, 30 - window.memMoves);
+        setTimeout(function () { showGameResult('Xotira o\'yini', window.memMoves + ' urinish', null, pts, "startGame('memory')"); }, 400);
       }
     } else {
       window.memLocked = true;
@@ -1371,13 +1450,12 @@ function flipCard(el) {
 // ─── MATH GAME ───
 function startMathGame() {
   window.mathScore = 0; window.mathRound = 0; window.mathTotal = 10;
-  window.mathTimeLeft = 0;
   nextMathRound();
 }
 function nextMathRound() {
   if (window.mathRound >= window.mathTotal) {
-    var ga = document.getElementById('gameArea');
-    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.mathScore + '/' + window.mathTotal + '</h2><p style="font-size:1.1rem;color:var(--muted);margin-bottom:20px">' + (window.mathScore >= 7 ? 'Ajoyib natija!' : window.mathScore >= 5 ? 'Yaxshi!' : 'Mashq qiling!') + '</p><button class="btn btn-sm btn-primary" onclick="startGame(\'math\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    var pts = window.mathScore * 5;
+    showGameResult('Tez hisoblash', window.mathScore, window.mathTotal, pts, "startGame('math')");
     return;
   }
   window.mathRound++;
@@ -1420,10 +1498,7 @@ function checkMathAnswer(el) {
   var allOpts = document.querySelectorAll('.math-opt');
   allOpts.forEach(function (o) { o.style.pointerEvents = 'none'; });
   if (val === ans) { el.classList.add('correct'); window.mathScore++; }
-  else {
-    el.classList.add('wrong');
-    allOpts.forEach(function (o) { if (parseInt(o.dataset.val) === ans) o.classList.add('correct'); });
-  }
+  else { el.classList.add('wrong'); allOpts.forEach(function (o) { if (parseInt(o.dataset.val) === ans) o.classList.add('correct'); }); }
   setTimeout(nextMathRound, 800);
 }
 
@@ -1438,27 +1513,24 @@ function startTypingGame() {
 function nextTypingRound() {
   if (window.typingRound >= window.typingTotal) {
     var elapsed = Math.round((Date.now() - window.typingStart) / 1000);
-    var ga = document.getElementById('gameArea');
-    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.typingScore + '/' + window.typingTotal + '</h2><p style="color:var(--muted);margin-bottom:20px">Vaqt: ' + elapsed + ' soniya</p><button class="btn btn-sm btn-primary" onclick="startGame(\'typing\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    var pts = window.typingScore * 4 + Math.max(0, 20 - Math.floor(elapsed / 5));
+    showGameResult('Tez yozish (' + elapsed + 's)', window.typingScore, window.typingTotal, pts, "startGame('typing')");
     return;
   }
   var word = window.typingWords[window.typingRound];
   window.typingRound++;
   var ga = document.getElementById('gameArea');
-  ga.innerHTML = '<div class="game-area"><div class="game-score-bar"><span>So\'z ' + window.typingRound + '/' + window.typingTotal + '</span><span>Ball: ' + window.typingScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div><div class="typing-word">' + word + '</div><input class="typing-input" id="typingInput" placeholder="So\'zni yozing..." autocomplete="off" oninput="checkTyping(this,\'' + word + '\')"><p id="typingHint" style="text-align:center;margin-top:12px;font-size:.85rem;color:var(--muted)">So\'zni to\'g\'ri yozing va Enter bosing</p></div>';
+  ga.innerHTML = '<div class="game-area"><div class="game-score-bar"><span>So\'z ' + window.typingRound + '/' + window.typingTotal + '</span><span>Ball: ' + window.typingScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div><div class="typing-word">' + word + '</div><input class="typing-input" id="typingInput" placeholder="So\'zni yozing..." autocomplete="off" oninput="checkTyping(this,\'' + word + '\')"><p style="text-align:center;margin-top:12px;font-size:.85rem;color:var(--muted)">So\'zni to\'g\'ri yozing</p></div>';
   setTimeout(function () { var inp = document.getElementById('typingInput'); if (inp) inp.focus(); }, 100);
 }
 function checkTyping(inp, word) {
-  var val = inp.value.trim().toLowerCase();
-  if (val === word.toLowerCase()) {
-    window.typingScore++;
-    inp.style.borderColor = 'var(--green)';
-    inp.disabled = true;
+  if (inp.value.trim().toLowerCase() === word.toLowerCase()) {
+    window.typingScore++; inp.style.borderColor = 'var(--green)'; inp.disabled = true;
     setTimeout(nextTypingRound, 400);
   }
 }
 
-// ─── QUIZ GAME (general knowledge) ───
+// ─── QUIZ GAME ───
 var quizGameQuestions = [
   {q:"Kompyuter ixtiro qilingan yil?",opts:["1936","1945","1950","1960"],a:1},
   {q:"1 kilobayt necha bayt?",opts:["100","512","1024","2048"],a:2},
@@ -1466,14 +1538,14 @@ var quizGameQuestions = [
   {q:"Eng kichik ma'lumot birligi?",opts:["Bayt","Bit","Kilobayt","Megabayt"],a:1},
   {q:"CPU ning vazifasi?",opts:["Ma'lumotlarni saqlash","Buyruqlarni bajarish","Internet ulash","Ekranga chiqarish"],a:1},
   {q:"WWW kim tomonidan yaratilgan?",opts:["Bill Gates","Tim Berners-Lee","Steve Jobs","Mark Zuckerberg"],a:1},
-  {q:"Python dasturlash tili qachon yaratilgan?",opts:["1985","1991","2000","1995"],a:1},
+  {q:"Python qachon yaratilgan?",opts:["1985","1991","2000","1995"],a:1},
   {q:"RAM nima?",opts:["Doimiy xotira","Operativ xotira","Grafik karta","Protsessor"],a:1},
   {q:"1 megabayt necha kilobayt?",opts:["100","512","1024","2048"],a:2},
   {q:"Birinchi dasturchi kim?",opts:["Alan Turing","Ada Lovelace","Charles Babbage","John von Neumann"],a:1},
-  {q:"IP manzil nima?",opts:["Internet parol","Qurilma identifikatori tarmoqda","Dastur nomi","Fayl kengaytmasi"],a:1},
-  {q:"CSS nima uchun ishlatiladi?",opts:["Dasturlash","Veb sahifa dizayni","Ma'lumotlar bazasi","Tarmoq xavfsizligi"],a:1},
-  {q:"USB ning to'liq nomi?",opts:["Universal Serial Bus","United System Board","Ultra Speed Byte","Uniform Signal Base"],a:0},
-  {q:"SSD va HDD farqi?",opts:["SSD tezroq, HDD sekinroq","SSD kattaroq","HDD yangi texnologiya","Farqi yo'q"],a:0},
+  {q:"IP manzil nima?",opts:["Internet parol","Qurilma ID tarmoqda","Dastur nomi","Fayl kengaytmasi"],a:1},
+  {q:"CSS nima uchun?",opts:["Dasturlash","Veb dizayn","Ma'lumotlar bazasi","Tarmoq xavfsizligi"],a:1},
+  {q:"USB to'liq nomi?",opts:["Universal Serial Bus","United System Board","Ultra Speed Byte","Uniform Signal Base"],a:0},
+  {q:"SSD va HDD farqi?",opts:["SSD tezroq","SSD kattaroq","HDD yangi","Farqi yo'q"],a:0},
   {q:"Linux nima?",opts:["Brauzer","Operatsion tizim","Dasturlash tili","Ofis dasturi"],a:1}
 ];
 function startQuizGame() {
@@ -1483,12 +1555,11 @@ function startQuizGame() {
 }
 function nextQuizGRound() {
   if (window.quizGRound >= window.quizGQuestions.length) {
-    var ga = document.getElementById('gameArea');
-    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.quizGScore + '/' + window.quizGQuestions.length + '</h2><p style="color:var(--muted);margin-bottom:20px">' + (window.quizGScore >= 7 ? 'Zo\'r bilim!' : window.quizGScore >= 5 ? 'Yaxshi!' : 'Ko\'proq o\'qing!') + '</p><button class="btn btn-sm btn-primary" onclick="startGame(\'quiz\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    var pts = window.quizGScore * 5;
+    showGameResult('Bilim jarchi', window.quizGScore, window.quizGQuestions.length, pts, "startGame('quiz')");
     return;
   }
-  var q = window.quizGQuestions[window.quizGRound];
-  window.quizGRound++;
+  var q = window.quizGQuestions[window.quizGRound]; window.quizGRound++;
   var ga = document.getElementById('gameArea');
   var html = '<div class="game-area"><div class="game-score-bar"><span>Savol ' + window.quizGRound + '/' + window.quizGQuestions.length + '</span><span>Ball: ' + window.quizGScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
   html += '<h3 style="font-size:1.1rem;font-weight:700;margin:20px 0;line-height:1.6">' + q.q + '</h3>';
@@ -1500,14 +1571,210 @@ function nextQuizGRound() {
   ga.innerHTML = html;
 }
 function checkQuizGAnswer(el) {
-  var idx = parseInt(el.dataset.idx);
-  var ans = parseInt(el.dataset.answer);
+  var idx = parseInt(el.dataset.idx); var ans = parseInt(el.dataset.answer);
   var allOpts = document.querySelectorAll('.math-opt');
   allOpts.forEach(function (o) { o.style.pointerEvents = 'none'; });
   if (idx === ans) { el.classList.add('correct'); window.quizGScore++; }
-  else {
-    el.classList.add('wrong');
-    allOpts.forEach(function (o) { if (parseInt(o.dataset.idx) === ans) o.classList.add('correct'); });
-  }
+  else { el.classList.add('wrong'); allOpts.forEach(function (o) { if (parseInt(o.dataset.idx) === ans) o.classList.add('correct'); }); }
   setTimeout(nextQuizGRound, 800);
+}
+
+// ─── SNAKE GAME ───
+function startSnakeGame() {
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area"><div class="game-score-bar"><span>🐍 Ilon o\'yini</span><span id="snakeScore">Ball: 0</span><button class="btn btn-sm btn-outline" onclick="snakeExit()">← Orqaga</button></div>' +
+    '<canvas id="snakeCanvas" width="320" height="320" style="display:block;margin:10px auto;border:2px solid var(--border);border-radius:12px;background:var(--card);touch-action:none"></canvas>' +
+    '<p style="text-align:center;color:var(--muted);font-size:.82rem;margin-top:8px">Strelkalar yoki suring (swipe)</p></div>';
+  var canvas = document.getElementById('snakeCanvas');
+  var ctx = canvas.getContext('2d');
+  var gs = 20, tc = 16;
+  var snake = [{x:8,y:8}]; var dir = {x:1,y:0}; var food = spawnFood();
+  var score = 0; var speed = 150;
+  function spawnFood() {
+    var f;
+    do { f = {x:Math.floor(Math.random()*tc),y:Math.floor(Math.random()*tc)}; }
+    while (snake.some(function(s){return s.x===f.x&&s.y===f.y;}));
+    return f;
+  }
+  function draw() {
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2d6da8';
+    snake.forEach(function(s){ ctx.fillRect(s.x*gs+1,s.y*gs+1,gs-2,gs-2); });
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(food.x*gs+2,food.y*gs+2,gs-4,gs-4);
+  }
+  function step() {
+    var head = {x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+    if (head.x<0||head.x>=tc||head.y<0||head.y>=tc||snake.some(function(s){return s.x===head.x&&s.y===head.y;})) {
+      clearInterval(gameTimer);
+      var pts = score * 3;
+      showGameResult('Ilon o\'yini', score, null, pts, "startGame('snake')");
+      return;
+    }
+    snake.unshift(head);
+    if (head.x===food.x&&head.y===food.y) { score++; food = spawnFood(); document.getElementById('snakeScore').textContent = 'Ball: ' + score; }
+    else snake.pop();
+    draw();
+  }
+  draw();
+  gameTimer = setInterval(step, speed);
+  var keyHandler = function(e) {
+    if (e.key==='ArrowUp'&&dir.y!==1) dir={x:0,y:-1};
+    else if (e.key==='ArrowDown'&&dir.y!==-1) dir={x:0,y:1};
+    else if (e.key==='ArrowLeft'&&dir.x!==1) dir={x:-1,y:0};
+    else if (e.key==='ArrowRight'&&dir.x!==-1) dir={x:1,y:0};
+  };
+  document.addEventListener('keydown', keyHandler);
+  window._snakeKeyHandler = keyHandler;
+  var touchStart = null;
+  canvas.addEventListener('touchstart', function(e) { var t = e.touches[0]; touchStart = {x:t.clientX,y:t.clientY}; e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchmove', function(e) { e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchend', function(e) {
+    if (!touchStart) return;
+    var t = e.changedTouches[0]; var dx = t.clientX-touchStart.x; var dy = t.clientY-touchStart.y;
+    if (Math.abs(dx)>Math.abs(dy)) { if (dx>20&&dir.x!==1) dir={x:1,y:0}; else if (dx<-20&&dir.x!==-1) dir={x:-1,y:0}; }
+    else { if (dy>20&&dir.y!==1) dir={x:0,y:1}; else if (dy<-20&&dir.y!==-1) dir={x:0,y:-1}; }
+    touchStart = null;
+  });
+}
+function snakeExit() {
+  if (window._snakeKeyHandler) document.removeEventListener('keydown', window._snakeKeyHandler);
+  exitGame();
+}
+
+// ─── REACTION GAME ───
+function startReactionGame() {
+  window.reactionRound = 0; window.reactionTimes = [];
+  nextReactionRound();
+}
+function nextReactionRound() {
+  if (window.reactionRound >= 5) {
+    var avg = Math.round(window.reactionTimes.reduce(function(a,b){return a+b;},0) / window.reactionTimes.length);
+    var pts = Math.max(5, 50 - Math.floor(avg / 20));
+    showGameResult('Tez reaksiya (O\'rtacha: ' + avg + 'ms)', avg + 'ms', null, pts, "startGame('reaction')");
+    return;
+  }
+  window.reactionRound++;
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area" style="text-align:center"><div class="game-score-bar"><span>⚡ Raund ' + window.reactionRound + '/5</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>' +
+    '<div id="reactionBox" style="width:100%;max-width:400px;height:250px;margin:20px auto;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;cursor:pointer;background:var(--border);color:var(--muted)" onclick="reactionTooEarly()">Kutib turing...</div></div>';
+  var delay = 1500 + Math.random() * 3000;
+  gameTimer = setTimeout(function () {
+    var box = document.getElementById('reactionBox');
+    if (!box) return;
+    box.style.background = 'var(--green)'; box.style.color = '#fff';
+    box.textContent = 'BOSING!';
+    box.onclick = null;
+    window.reactionStart = Date.now();
+    box.addEventListener('click', reactionClick);
+  }, delay);
+}
+function reactionTooEarly() {
+  clearTimeout(gameTimer);
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area" style="text-align:center"><p style="font-size:1.2rem;font-weight:700;color:var(--red);margin:40px 0">Erta bosdingiz! Kutib turing...</p><button class="btn btn-sm btn-primary" onclick="nextReactionRound()">Davom etish</button></div>';
+}
+function reactionClick() {
+  var time = Date.now() - window.reactionStart;
+  window.reactionTimes.push(time);
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area" style="text-align:center"><p style="font-size:2rem;font-weight:900;color:var(--primary);margin:30px 0">' + time + ' ms</p><button class="btn btn-sm btn-primary" onclick="nextReactionRound()">Keyingi</button></div>';
+}
+
+// ─── COLOR GAME ───
+function startColorGame() {
+  window.colorScore = 0; window.colorRound = 0; window.colorTotal = 10;
+  nextColorRound();
+}
+function nextColorRound() {
+  if (window.colorRound >= window.colorTotal) {
+    var pts = window.colorScore * 4;
+    showGameResult('Rang topish', window.colorScore, window.colorTotal, pts, "startGame('color')");
+    return;
+  }
+  window.colorRound++;
+  var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#34495e'];
+  var names = ['Qizil','Ko\'k','Yashil','Sariq','Binafsha','Moviy','Apelsin','Kulrang'];
+  var correct = Math.floor(Math.random() * colors.length);
+  var fakeText = Math.floor(Math.random() * names.length);
+  var ga = document.getElementById('gameArea');
+  var html = '<div class="game-area"><div class="game-score-bar"><span>Savol ' + window.colorRound + '/' + window.colorTotal + '</span><span>Ball: ' + window.colorScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  html += '<p style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:12px">Qaysi RANG ko\'rsatilgan? (matnni emas, rangni toping)</p>';
+  html += '<div style="text-align:center;font-size:3rem;font-weight:900;margin:20px 0;color:' + colors[correct] + '">' + names[fakeText] + '</div>';
+  html += '<div class="math-options" style="grid-template-columns:repeat(2,1fr)">';
+  var opts = [correct];
+  while (opts.length < 4) { var r = Math.floor(Math.random() * colors.length); if (opts.indexOf(r) === -1) opts.push(r); }
+  opts.sort(function(){return Math.random()-0.5;});
+  for (var i = 0; i < opts.length; i++) {
+    html += '<div class="math-opt" style="color:' + colors[opts[i]] + ';font-weight:800" data-idx="' + opts[i] + '" data-answer="' + correct + '" onclick="checkColorAnswer(this)">' + names[opts[i]] + '</div>';
+  }
+  html += '</div></div>';
+  ga.innerHTML = html;
+}
+function checkColorAnswer(el) {
+  var idx = parseInt(el.dataset.idx); var ans = parseInt(el.dataset.answer);
+  var allOpts = document.querySelectorAll('.math-opt');
+  allOpts.forEach(function(o){o.style.pointerEvents='none';});
+  if (idx === ans) { el.classList.add('correct'); window.colorScore++; }
+  else { el.classList.add('wrong'); allOpts.forEach(function(o){if(parseInt(o.dataset.idx)===ans)o.classList.add('correct');}); }
+  setTimeout(nextColorRound, 700);
+}
+
+// ─── SEQUENCE GAME ───
+function startSequenceGame() {
+  window.seqLevel = 0; window.seqSequence = []; window.seqInput = [];
+  window.seqShowing = false;
+  nextSeqLevel();
+}
+function nextSeqLevel() {
+  window.seqLevel++;
+  window.seqSequence.push(Math.floor(Math.random() * 9) + 1);
+  window.seqInput = [];
+  showSequence();
+}
+function showSequence() {
+  window.seqShowing = true;
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area"><div class="game-score-bar"><span>🔗 Daraja: ' + window.seqLevel + '</span><span>' + window.seqSequence.length + ' ta raqam</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>' +
+    '<p style="text-align:center;font-size:1rem;color:var(--muted);margin:16px 0">Raqamlarni eslang!</p>' +
+    '<div id="seqDisplay" style="text-align:center;font-size:3rem;font-weight:900;color:var(--primary);margin:24px 0;min-height:60px;letter-spacing:12px"></div></div>';
+  var display = document.getElementById('seqDisplay');
+  var i = 0;
+  gameTimer = setInterval(function () {
+    if (i < window.seqSequence.length) {
+      display.textContent = window.seqSequence[i]; i++;
+    } else {
+      clearInterval(gameTimer);
+      display.textContent = '';
+      window.seqShowing = false;
+      showSeqInput();
+    }
+  }, 800);
+}
+function showSeqInput() {
+  var ga = document.getElementById('gameArea');
+  var html = '<div class="game-area"><div class="game-score-bar"><span>🔗 Daraja: ' + window.seqLevel + '</span><span id="seqInputDisplay" style="letter-spacing:6px;font-weight:700">' + (window.seqInput.length > 0 ? window.seqInput.join(' ') : '_ '.repeat(window.seqSequence.length)) + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  html += '<p style="text-align:center;color:var(--muted);font-size:.9rem;margin:12px 0">Raqamlarni tartib bilan bosing</p>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:16px auto">';
+  for (var n = 1; n <= 9; n++) {
+    html += '<div class="game-cell" onclick="seqPress(' + n + ')" style="font-size:1.4rem;min-height:60px">' + n + '</div>';
+  }
+  html += '</div></div>';
+  ga.innerHTML = html;
+}
+function seqPress(n) {
+  if (window.seqShowing) return;
+  window.seqInput.push(n);
+  var idx = window.seqInput.length - 1;
+  if (window.seqInput[idx] !== window.seqSequence[idx]) {
+    var pts = Math.max(0, (window.seqLevel - 1) * 8);
+    showGameResult('Ketma-ketlik', 'Daraja ' + (window.seqLevel - 1), null, pts, "startGame('sequence')");
+    return;
+  }
+  var disp = document.getElementById('seqInputDisplay');
+  if (disp) disp.textContent = window.seqInput.join(' ');
+  if (window.seqInput.length === window.seqSequence.length) {
+    setTimeout(nextSeqLevel, 600);
+  }
 }

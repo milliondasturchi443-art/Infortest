@@ -332,4 +332,42 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// ═══ GAME SCORE ═══
+router.post('/game-score', async (req, res) => {
+  try {
+    const { userId, points } = req.body;
+    if (!userId || points == null) return res.status(400).json({ error: 'userId va points kerak.' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
+    user.gamePoints = (user.gamePoints || 0) + Math.max(0, Math.round(points));
+    user.gamesPlayed = (user.gamesPlayed || 0) + 1;
+    await user.save();
+    res.json({ gamePoints: user.gamePoints, gamesPlayed: user.gamesPlayed });
+  } catch (err) {
+    console.error('Game score error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.get('/game-leaderboard', async (req, res) => {
+  try {
+    const users = await User.find({ gamesPlayed: { $gt: 0 } })
+      .select('name grade school gamePoints gamesPlayed')
+      .sort({ gamePoints: -1 })
+      .limit(50);
+    const lb = users.map((u, i) => ({
+      rank: i + 1,
+      name: u.name,
+      grade: u.grade,
+      school: u.school,
+      gamePoints: u.gamePoints || 0,
+      gamesPlayed: u.gamesPlayed || 0,
+    }));
+    res.json(lb);
+  } catch (err) {
+    console.error('Game leaderboard error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
 module.exports = router;

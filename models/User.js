@@ -51,6 +51,8 @@ const userSchema = new mongoose.Schema(
     streak: { type: Number, default: 0 },
     bestStreak: { type: Number, default: 0 },
     lastActiveDate: { type: Date, default: null },
+    gamePoints: { type: Number, default: 0 },
+    gamesPlayed: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -95,6 +97,8 @@ userSchema.methods.toPublic = function () {
     streak: this.streak || 0,
     bestStreak: this.bestStreak || 0,
     lastActiveDate: this.lastActiveDate,
+    gamePoints: this.gamePoints || 0,
+    gamesPlayed: this.gamesPlayed || 0,
     createdAt: this.createdAt,
   };
 };

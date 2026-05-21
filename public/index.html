@@ -350,12 +350,23 @@
           <h2 class="section-title">🎮 Mini o'yinlar</h2>
           <p class="section-desc">O'yin orqali o'rganish — miyangizni mashq qiling!</p>
           <div id="gamesContent">
+            <div id="gameStatsBar" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+              <div class="stat-card" style="flex:1;min-width:120px;padding:16px;text-align:center"><span class="val" style="font-size:1.4rem" id="gsPoints">0</span><span class="lbl">Ochkolar</span></div>
+              <div class="stat-card" style="flex:1;min-width:120px;padding:16px;text-align:center"><span class="val" style="font-size:1.4rem" id="gsRank">—</span><span class="lbl">Zvanie</span></div>
+              <div class="stat-card" style="flex:1;min-width:120px;padding:16px;text-align:center"><span class="val" style="font-size:1.4rem" id="gsPlayed">0</span><span class="lbl">O'yinlar</span></div>
+            </div>
             <div class="games-grid">
               <div class="game-card" onclick="startGame('memory')"><span class="game-icon">🧠</span><div class="game-name">Xotira o'yini</div><div class="game-desc">Juft kartalarni toping</div></div>
               <div class="game-card" onclick="startGame('math')"><span class="game-icon">🔢</span><div class="game-name">Tez hisoblash</div><div class="game-desc">Matematik misollarni yeching</div></div>
               <div class="game-card" onclick="startGame('typing')"><span class="game-icon">⌨️</span><div class="game-name">Tez yozish</div><div class="game-desc">So'zlarni tez yozing</div></div>
               <div class="game-card" onclick="startGame('quiz')"><span class="game-icon">❓</span><div class="game-name">Bilim jarchi</div><div class="game-desc">Umumiy bilim savollari</div></div>
+              <div class="game-card" onclick="startGame('snake')"><span class="game-icon">🐍</span><div class="game-name">Ilon o'yini</div><div class="game-desc">Klassik ilon o'yini</div></div>
+              <div class="game-card" onclick="startGame('reaction')"><span class="game-icon">⚡</span><div class="game-name">Tez reaksiya</div><div class="game-desc">Qanchalik tez bosasiz?</div></div>
+              <div class="game-card" onclick="startGame('color')"><span class="game-icon">🎨</span><div class="game-name">Rang topish</div><div class="game-desc">To'g'ri rangni toping</div></div>
+              <div class="game-card" onclick="startGame('sequence')"><span class="game-icon">🔗</span><div class="game-name">Ketma-ketlik</div><div class="game-desc">Raqam ketma-ketligini eslab qoling</div></div>
             </div>
+            <h3 class="section-title" style="margin-top:28px">🏆 O'yin reytingi</h3>
+            <div id="gameLeaderboard" style="margin-top:8px"><p style="color:var(--muted);text-align:center">Yuklanmoqda...</p></div>
           </div>
           <div id="gameArea" style="display:none"></div>
         </div>
