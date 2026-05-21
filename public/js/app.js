@@ -220,6 +220,7 @@ var TAB_TITLES = {
   settings: '\uD83C\uDFA8 Sozlamalar',
   achievements: '\uD83C\uDFC6 Yutuqlar',
   daily: '\uD83C\uDF1F Kunlik vazifa',
+  games: '\uD83C\uDFAE Mini o\'yinlar',
   admin: '\u2699\uFE0F Admin',
 };
 
@@ -1275,3 +1276,219 @@ document.addEventListener('keydown', function (e) {
   if (a.id === 'registerScreen') register();
   else if (a.id === 'loginScreen') login();
 });
+
+// ═══════ MINI GAMES ═══════
+var gameTimer = null;
+var gameScore = 0;
+var gameRound = 0;
+
+function startGame(type) {
+  var gc = document.getElementById('gamesContent');
+  var ga = document.getElementById('gameArea');
+  gc.style.display = 'none';
+  ga.style.display = 'block';
+  gameScore = 0; gameRound = 0;
+  if (gameTimer) { clearInterval(gameTimer); clearTimeout(gameTimer); }
+  if (type === 'memory') startMemoryGame();
+  else if (type === 'math') startMathGame();
+  else if (type === 'typing') startTypingGame();
+  else if (type === 'quiz') startQuizGame();
+}
+
+function exitGame() {
+  if (gameTimer) { clearInterval(gameTimer); clearTimeout(gameTimer); }
+  var gc = document.getElementById('gamesContent');
+  var ga = document.getElementById('gameArea');
+  gc.style.display = 'block';
+  ga.style.display = 'none';
+  ga.innerHTML = '';
+}
+
+// ─── MEMORY GAME ───
+function startMemoryGame() {
+  var icons = ['📐','🔬','💻','🧪','📊','📚','🎯','⚡'];
+  var cards = icons.concat(icons);
+  cards.sort(function () { return Math.random() - 0.5; });
+  var flipped = []; var matched = 0; var moves = 0;
+  var ga = document.getElementById('gameArea');
+  var html = '<div class="game-area"><div class="game-score-bar"><span>Xotira o\'yini</span><span id="memMoves">Urinishlar: 0</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  html += '<div class="game-board" style="grid-template-columns:repeat(4,1fr);max-width:400px;margin:0 auto">';
+  for (var i = 0; i < cards.length; i++) {
+    html += '<div class="game-cell" data-idx="' + i + '" data-icon="' + cards[i] + '" onclick="flipCard(this)" style="font-size:1.8rem;min-height:70px">?</div>';
+  }
+  html += '</div></div>';
+  ga.innerHTML = html;
+
+  window.memFlipped = []; window.memMatched = 0; window.memMoves = 0; window.memLocked = false;
+}
+function flipCard(el) {
+  if (window.memLocked) return;
+  if (el.classList.contains('matched') || el.classList.contains('flipped')) return;
+  el.classList.add('flipped');
+  el.textContent = el.dataset.icon;
+  window.memFlipped.push(el);
+  if (window.memFlipped.length === 2) {
+    window.memMoves++;
+    document.getElementById('memMoves').textContent = 'Urinishlar: ' + window.memMoves;
+    var a = window.memFlipped[0], b = window.memFlipped[1];
+    if (a.dataset.icon === b.dataset.icon) {
+      a.classList.add('matched'); b.classList.add('matched');
+      window.memFlipped = [];
+      window.memMatched += 2;
+      if (window.memMatched >= 16) {
+        setTimeout(function () { alert('Tabriklaymiz! ' + window.memMoves + ' urinishda tamomladingiz!'); }, 300);
+      }
+    } else {
+      window.memLocked = true;
+      setTimeout(function () {
+        a.classList.remove('flipped'); a.textContent = '?';
+        b.classList.remove('flipped'); b.textContent = '?';
+        window.memFlipped = []; window.memLocked = false;
+      }, 800);
+    }
+  }
+}
+
+// ─── MATH GAME ───
+function startMathGame() {
+  window.mathScore = 0; window.mathRound = 0; window.mathTotal = 10;
+  window.mathTimeLeft = 0;
+  nextMathRound();
+}
+function nextMathRound() {
+  if (window.mathRound >= window.mathTotal) {
+    var ga = document.getElementById('gameArea');
+    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.mathScore + '/' + window.mathTotal + '</h2><p style="font-size:1.1rem;color:var(--muted);margin-bottom:20px">' + (window.mathScore >= 7 ? 'Ajoyib natija!' : window.mathScore >= 5 ? 'Yaxshi!' : 'Mashq qiling!') + '</p><button class="btn btn-sm btn-primary" onclick="startGame(\'math\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    return;
+  }
+  window.mathRound++;
+  var ops = ['+', '-', '*'];
+  var op = ops[Math.floor(Math.random() * ops.length)];
+  var a, b, answer;
+  if (op === '*') { a = Math.floor(Math.random() * 12) + 2; b = Math.floor(Math.random() * 12) + 2; }
+  else { a = Math.floor(Math.random() * 50) + 10; b = Math.floor(Math.random() * 30) + 5; }
+  if (op === '+') answer = a + b;
+  else if (op === '-') { if (a < b) { var tmp = a; a = b; b = tmp; } answer = a - b; }
+  else answer = a * b;
+  var options = [answer];
+  while (options.length < 4) {
+    var wrong = answer + (Math.floor(Math.random() * 20) - 10);
+    if (wrong !== answer && options.indexOf(wrong) === -1 && wrong >= 0) options.push(wrong);
+  }
+  options.sort(function () { return Math.random() - 0.5; });
+  window.mathTimeLeft = 10;
+  var ga = document.getElementById('gameArea');
+  var html = '<div class="game-area"><div class="game-score-bar"><span>Savol ' + window.mathRound + '/' + window.mathTotal + '</span><span>Ball: ' + window.mathScore + '</span><span id="mathTimer">⏱ 10s</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  html += '<div class="math-problem">' + a + ' ' + op + ' ' + b + ' = ?</div>';
+  html += '<div class="math-options">';
+  for (var i = 0; i < options.length; i++) {
+    html += '<div class="math-opt" data-val="' + options[i] + '" data-answer="' + answer + '" onclick="checkMathAnswer(this)">' + options[i] + '</div>';
+  }
+  html += '</div></div>';
+  ga.innerHTML = html;
+  if (gameTimer) clearInterval(gameTimer);
+  gameTimer = setInterval(function () {
+    window.mathTimeLeft--;
+    var te = document.getElementById('mathTimer');
+    if (te) te.textContent = '⏱ ' + window.mathTimeLeft + 's';
+    if (window.mathTimeLeft <= 0) { clearInterval(gameTimer); nextMathRound(); }
+  }, 1000);
+}
+function checkMathAnswer(el) {
+  clearInterval(gameTimer);
+  var val = parseInt(el.dataset.val);
+  var ans = parseInt(el.dataset.answer);
+  var allOpts = document.querySelectorAll('.math-opt');
+  allOpts.forEach(function (o) { o.style.pointerEvents = 'none'; });
+  if (val === ans) { el.classList.add('correct'); window.mathScore++; }
+  else {
+    el.classList.add('wrong');
+    allOpts.forEach(function (o) { if (parseInt(o.dataset.val) === ans) o.classList.add('correct'); });
+  }
+  setTimeout(nextMathRound, 800);
+}
+
+// ─── TYPING GAME ───
+function startTypingGame() {
+  window.typingWords = ['algoritm','kompyuter','dasturlash','funksiya','tarmoq','server','brauzer','internet','xotira','protsessor','monitor','klaviatura','fayl','papka','dastur','kod','sayt','parol','tizim','malumot'];
+  window.typingWords.sort(function () { return Math.random() - 0.5; });
+  window.typingScore = 0; window.typingRound = 0; window.typingTotal = 10;
+  window.typingStart = Date.now();
+  nextTypingRound();
+}
+function nextTypingRound() {
+  if (window.typingRound >= window.typingTotal) {
+    var elapsed = Math.round((Date.now() - window.typingStart) / 1000);
+    var ga = document.getElementById('gameArea');
+    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.typingScore + '/' + window.typingTotal + '</h2><p style="color:var(--muted);margin-bottom:20px">Vaqt: ' + elapsed + ' soniya</p><button class="btn btn-sm btn-primary" onclick="startGame(\'typing\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    return;
+  }
+  var word = window.typingWords[window.typingRound];
+  window.typingRound++;
+  var ga = document.getElementById('gameArea');
+  ga.innerHTML = '<div class="game-area"><div class="game-score-bar"><span>So\'z ' + window.typingRound + '/' + window.typingTotal + '</span><span>Ball: ' + window.typingScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div><div class="typing-word">' + word + '</div><input class="typing-input" id="typingInput" placeholder="So\'zni yozing..." autocomplete="off" oninput="checkTyping(this,\'' + word + '\')"><p id="typingHint" style="text-align:center;margin-top:12px;font-size:.85rem;color:var(--muted)">So\'zni to\'g\'ri yozing va Enter bosing</p></div>';
+  setTimeout(function () { var inp = document.getElementById('typingInput'); if (inp) inp.focus(); }, 100);
+}
+function checkTyping(inp, word) {
+  var val = inp.value.trim().toLowerCase();
+  if (val === word.toLowerCase()) {
+    window.typingScore++;
+    inp.style.borderColor = 'var(--green)';
+    inp.disabled = true;
+    setTimeout(nextTypingRound, 400);
+  }
+}
+
+// ─── QUIZ GAME (general knowledge) ───
+var quizGameQuestions = [
+  {q:"Kompyuter ixtiro qilingan yil?",opts:["1936","1945","1950","1960"],a:1},
+  {q:"1 kilobayt necha bayt?",opts:["100","512","1024","2048"],a:2},
+  {q:"HTML ning to'liq nomi?",opts:["Hyper Text Markup Language","High Tech Modern Language","Hyper Transfer Markup Language","Home Tool Markup Language"],a:0},
+  {q:"Eng kichik ma'lumot birligi?",opts:["Bayt","Bit","Kilobayt","Megabayt"],a:1},
+  {q:"CPU ning vazifasi?",opts:["Ma'lumotlarni saqlash","Buyruqlarni bajarish","Internet ulash","Ekranga chiqarish"],a:1},
+  {q:"WWW kim tomonidan yaratilgan?",opts:["Bill Gates","Tim Berners-Lee","Steve Jobs","Mark Zuckerberg"],a:1},
+  {q:"Python dasturlash tili qachon yaratilgan?",opts:["1985","1991","2000","1995"],a:1},
+  {q:"RAM nima?",opts:["Doimiy xotira","Operativ xotira","Grafik karta","Protsessor"],a:1},
+  {q:"1 megabayt necha kilobayt?",opts:["100","512","1024","2048"],a:2},
+  {q:"Birinchi dasturchi kim?",opts:["Alan Turing","Ada Lovelace","Charles Babbage","John von Neumann"],a:1},
+  {q:"IP manzil nima?",opts:["Internet parol","Qurilma identifikatori tarmoqda","Dastur nomi","Fayl kengaytmasi"],a:1},
+  {q:"CSS nima uchun ishlatiladi?",opts:["Dasturlash","Veb sahifa dizayni","Ma'lumotlar bazasi","Tarmoq xavfsizligi"],a:1},
+  {q:"USB ning to'liq nomi?",opts:["Universal Serial Bus","United System Board","Ultra Speed Byte","Uniform Signal Base"],a:0},
+  {q:"SSD va HDD farqi?",opts:["SSD tezroq, HDD sekinroq","SSD kattaroq","HDD yangi texnologiya","Farqi yo'q"],a:0},
+  {q:"Linux nima?",opts:["Brauzer","Operatsion tizim","Dasturlash tili","Ofis dasturi"],a:1}
+];
+function startQuizGame() {
+  window.quizGScore = 0; window.quizGRound = 0;
+  window.quizGQuestions = quizGameQuestions.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 10);
+  nextQuizGRound();
+}
+function nextQuizGRound() {
+  if (window.quizGRound >= window.quizGQuestions.length) {
+    var ga = document.getElementById('gameArea');
+    ga.innerHTML = '<div class="game-area" style="text-align:center"><h2 style="font-size:1.5rem;margin-bottom:16px">Natija: ' + window.quizGScore + '/' + window.quizGQuestions.length + '</h2><p style="color:var(--muted);margin-bottom:20px">' + (window.quizGScore >= 7 ? 'Zo\'r bilim!' : window.quizGScore >= 5 ? 'Yaxshi!' : 'Ko\'proq o\'qing!') + '</p><button class="btn btn-sm btn-primary" onclick="startGame(\'quiz\')">Qayta o\'ynash</button> <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="exitGame()">← Orqaga</button></div>';
+    return;
+  }
+  var q = window.quizGQuestions[window.quizGRound];
+  window.quizGRound++;
+  var ga = document.getElementById('gameArea');
+  var html = '<div class="game-area"><div class="game-score-bar"><span>Savol ' + window.quizGRound + '/' + window.quizGQuestions.length + '</span><span>Ball: ' + window.quizGScore + '</span><button class="btn btn-sm btn-outline" onclick="exitGame()">← Orqaga</button></div>';
+  html += '<h3 style="font-size:1.1rem;font-weight:700;margin:20px 0;line-height:1.6">' + q.q + '</h3>';
+  html += '<div class="math-options" style="max-width:100%;grid-template-columns:1fr">';
+  for (var i = 0; i < q.opts.length; i++) {
+    html += '<div class="math-opt" style="text-align:left;font-family:Inter,sans-serif;font-size:.9rem;font-weight:600" data-idx="' + i + '" data-answer="' + q.a + '" onclick="checkQuizGAnswer(this)">' + String.fromCharCode(65 + i) + ') ' + q.opts[i] + '</div>';
+  }
+  html += '</div></div>';
+  ga.innerHTML = html;
+}
+function checkQuizGAnswer(el) {
+  var idx = parseInt(el.dataset.idx);
+  var ans = parseInt(el.dataset.answer);
+  var allOpts = document.querySelectorAll('.math-opt');
+  allOpts.forEach(function (o) { o.style.pointerEvents = 'none'; });
+  if (idx === ans) { el.classList.add('correct'); window.quizGScore++; }
+  else {
+    el.classList.add('wrong');
+    allOpts.forEach(function (o) { if (parseInt(o.dataset.idx) === ans) o.classList.add('correct'); });
+  }
+  setTimeout(nextQuizGRound, 800);
+}

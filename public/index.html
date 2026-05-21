@@ -151,6 +151,7 @@
         <div class="nav-item" data-tab="profile" onclick="showDashTab('profile',this)"><span class="nav-icon">👤</span> Profil</div>
         <div class="nav-item" data-tab="settings" onclick="showDashTab('settings',this)"><span class="nav-icon">🎨</span> Sozlamalar</div>
         <div class="nav-item" data-tab="achievements" onclick="showDashTab('achievements',this)"><span class="nav-icon">🏆</span> Yutuqlar</div>
+        <div class="nav-item" data-tab="games" onclick="showDashTab('games',this)"><span class="nav-icon">🎮</span> Mini o'yinlar</div>
         <div class="nav-divider"></div>
         <div class="nav-item" id="adminTab" style="display:none" data-tab="admin" onclick="showDashTab('admin',this)"><span class="nav-icon">⚙️</span> Admin</div>
       </nav>
@@ -344,6 +345,19 @@
           <h2 class="section-title">Yutuqlar</h2>
           <p class="section-desc">Siz erishgan natijalar</p>
           <div class="ach-grid" id="achGrid"></div>
+        </div>
+        <div id="tab-games" class="dash-tab">
+          <h2 class="section-title">🎮 Mini o'yinlar</h2>
+          <p class="section-desc">O'yin orqali o'rganish — miyangizni mashq qiling!</p>
+          <div id="gamesContent">
+            <div class="games-grid">
+              <div class="game-card" onclick="startGame('memory')"><span class="game-icon">🧠</span><div class="game-name">Xotira o'yini</div><div class="game-desc">Juft kartalarni toping</div></div>
+              <div class="game-card" onclick="startGame('math')"><span class="game-icon">🔢</span><div class="game-name">Tez hisoblash</div><div class="game-desc">Matematik misollarni yeching</div></div>
+              <div class="game-card" onclick="startGame('typing')"><span class="game-icon">⌨️</span><div class="game-name">Tez yozish</div><div class="game-desc">So'zlarni tez yozing</div></div>
+              <div class="game-card" onclick="startGame('quiz')"><span class="game-icon">❓</span><div class="game-name">Bilim jarchi</div><div class="game-desc">Umumiy bilim savollari</div></div>
+            </div>
+          </div>
+          <div id="gameArea" style="display:none"></div>
         </div>
         <div id="tab-admin" class="dash-tab">
           <h2 class="section-title">Admin panel</h2>
