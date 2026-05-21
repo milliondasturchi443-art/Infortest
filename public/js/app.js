@@ -74,6 +74,22 @@ async function loadSubjectQuestions(subject) {
     console.error('Failed to load questions:', err);
   }
   applyStoredSettings();
+  var savedUserId = localStorage.getItem('userId');
+  if (savedUserId) {
+    try {
+      var res = await fetch(API + '/api/auth/profile/' + savedUserId);
+      if (res.ok) {
+        var data = await res.json();
+        currentUser = data;
+        applyUserSettings();
+        showScreen('dashboardScreen');
+        return;
+      }
+    } catch (err) {
+      console.error('Auto-login failed:', err);
+    }
+    localStorage.removeItem('userId');
+  }
 })();
 
 function applyStoredSettings() {
@@ -153,6 +169,7 @@ async function register() {
     var data = await res.json();
     if (!res.ok) return showErr('regErr', data.error);
     currentUser = data;
+    localStorage.setItem('userId', data.id);
     applyUserSettings();
     showScreen('dashboardScreen');
   } catch (err) {
@@ -172,6 +189,7 @@ async function login() {
     var data = await res.json();
     if (!res.ok) return showErr('loginErr', data.error);
     currentUser = data;
+    localStorage.setItem('userId', data.id);
     applyUserSettings();
     showScreen('dashboardScreen');
   } catch (err) {
@@ -183,10 +201,11 @@ function logout() {
   currentUser = null;
   document.body.classList.remove('dark');
   document.body.classList.remove('font-small', 'font-medium', 'font-large');
-  document.documentElement.style.setProperty('--primary', '#4361ee');
+  document.documentElement.style.setProperty('--primary', '#2d6da8');
   localStorage.removeItem('theme');
   localStorage.removeItem('accentColor');
   localStorage.removeItem('fontSize');
+  localStorage.removeItem('userId');
   showScreen('welcomeScreen');
 }
 
