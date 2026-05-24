@@ -195,5 +195,55 @@ function checkAchievements(user) {
   user.achievements = Array.from(achs);
 }
 
+// ═══ FRIENDS ═══
+router.post('/friend/add', async (req, res) => {
+  try {
+    const { userId, friendCode } = req.body;
+    if (!userId || !friendCode) return res.status(400).json({ error: 'userId va friendCode kerak.' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
+    const friend = await User.findOne({ friendCode: friendCode.toUpperCase() });
+    if (!friend) return res.status(404).json({ error: 'Kod topilmadi. Tekshirib qaytadan kiriting.' });
+    if (friend._id.equals(user._id)) return res.status(400).json({ error: 'O\'zingizni qo\'sha olmaysiz.' });
+    if (user.friends.some(f => f.equals(friend._id))) return res.status(400).json({ error: 'Bu do\'st allaqachon qo\'shilgan.' });
+    user.friends.push(friend._id);
+    if (!friend.friends.some(f => f.equals(user._id))) friend.friends.push(user._id);
+    await user.save();
+    await friend.save();
+    res.json({ ok: true, friend: { id: friend._id, name: friend.name, grade: friend.grade, friendCode: friend.friendCode } });
+  } catch (err) {
+    console.error('Friend add error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.get('/friends/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate('friends', 'name grade school friendCode gamePoints');
+    if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
+    const friends = (user.friends || []).map(f => ({
+      id: f._id, name: f.name, grade: f.grade, school: f.school,
+      friendCode: f.friendCode, gamePoints: f.gamePoints || 0
+    }));
+    res.json(friends);
+  } catch (err) {
+    console.error('Friends list error:', err);
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
+router.post('/friend/remove', async (req, res) => {
+  try {
+    const { userId, friendId } = req.body;
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+    if (user) { user.friends = user.friends.filter(f => !f.equals(friendId)); await user.save(); }
+    if (friend) { friend.friends = friend.friends.filter(f => !f.equals(userId)); await friend.save(); }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server xatosi.' });
+  }
+});
+
 module.exports = router;
 module.exports.checkAchievements = checkAchievements;

@@ -33,15 +33,24 @@ app.get('*', (req, res, next) => {
 // ═══ MULTIPLAYER GAME SERVER ═══
 const matchQueues = { shooter1v1: [], tanks1v1: [], tanks2v2: [], arena1v1: [] };
 const activeRooms = {};
+const lobbies = {};
+
+function genLobbyCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return lobbies[code] ? genLobbyCode() : code;
+}
 
 io.on('connection', (socket) => {
+  // ─── MATCHMAKING QUEUE ───
   socket.on('join_queue', (data) => {
-    const { gameType, mode, player } = data;
+    const { gameType, mode, player, mapId } = data;
     const qKey = gameType + mode;
     const queue = matchQueues[qKey];
     if (!queue) return;
     if (queue.find(p => p.id === player.id)) return;
-    queue.push({ ...player, socketId: socket.id });
+    queue.push({ ...player, socketId: socket.id, mapId: mapId || 'default' });
     socket.join('queue_' + qKey);
     io.to('queue_' + qKey).emit('queue_update', { count: queue.length });
 
@@ -49,7 +58,8 @@ io.on('connection', (socket) => {
     if (queue.length >= needed) {
       const players = queue.splice(0, needed);
       const roomId = qKey + '_' + Date.now();
-      const room = { id: roomId, gameType, mode, players: [], state: null, started: false };
+      const chosenMap = players[0].mapId || 'default';
+      const room = { id: roomId, gameType, mode, mapId: chosenMap, players: [], state: null, started: false };
 
       players.forEach((p, i) => {
         room.players.push({ ...p, team: mode === '2v2' ? (i < 2 ? 0 : 1) : i, ready: false });
@@ -60,7 +70,7 @@ io.on('connection', (socket) => {
       activeRooms[roomId] = room;
       initGameState(room);
       room.started = true;
-      io.to(roomId).emit('match_found', { roomId, players: room.players, gameType, mode, state: room.state });
+      io.to(roomId).emit('match_found', { roomId, players: room.players, gameType, mode, mapId: chosenMap, state: room.state });
       startGameLoop(roomId);
     }
   });
@@ -75,6 +85,56 @@ io.on('connection', (socket) => {
     socket.leave('queue_' + qKey);
   });
 
+  // ─── LOBBY SYSTEM ───
+  socket.on('create_lobby', (data) => {
+    const { gameType, mode, player, mapId } = data;
+    const code = genLobbyCode();
+    const needed = mode === '2v2' ? 4 : 2;
+    const lobby = {
+      code, gameType, mode, mapId: mapId || 'default',
+      host: player.id, needed,
+      players: [{ ...player, socketId: socket.id }]
+    };
+    lobbies[code] = lobby;
+    socket.join('lobby_' + code);
+    socket.emit('lobby_created', { code, lobby: lobbyInfo(lobby) });
+  });
+
+  socket.on('join_lobby', (data) => {
+    const { code, player } = data;
+    const lobby = lobbies[code.toUpperCase()];
+    if (!lobby) return socket.emit('lobby_error', { error: 'Lobby topilmadi. Kodni tekshiring.' });
+    if (lobby.players.length >= lobby.needed) return socket.emit('lobby_error', { error: 'Lobby to\'la.' });
+    if (lobby.players.find(p => p.id === player.id)) return socket.emit('lobby_error', { error: 'Siz allaqachon lobbida.' });
+    lobby.players.push({ ...player, socketId: socket.id });
+    socket.join('lobby_' + code);
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+
+    if (lobby.players.length >= lobby.needed) {
+      startLobbyGame(lobby);
+    }
+  });
+
+  socket.on('leave_lobby', (data) => {
+    const { code, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby) return;
+    lobby.players = lobby.players.filter(p => p.id !== playerId);
+    socket.leave('lobby_' + code);
+    if (lobby.players.length === 0) { delete lobbies[code]; return; }
+    if (lobby.host === playerId && lobby.players.length > 0) lobby.host = lobby.players[0].id;
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
+  socket.on('lobby_change_map', (data) => {
+    const { code, mapId, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    lobby.mapId = mapId;
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
+  // ─── GAME INPUT ───
   socket.on('game_input', (data) => {
     const { roomId, playerId, input } = data;
     const room = activeRooms[roomId];
@@ -83,9 +143,16 @@ io.on('connection', (socket) => {
     if (player) player.input = input;
   });
 
+  // ─── DISCONNECT ───
   socket.on('disconnect', () => {
     Object.keys(matchQueues).forEach(qKey => {
       matchQueues[qKey] = matchQueues[qKey].filter(p => p.socketId !== socket.id);
+    });
+    Object.keys(lobbies).forEach(code => {
+      const lobby = lobbies[code];
+      lobby.players = lobby.players.filter(p => p.socketId !== socket.id);
+      if (lobby.players.length === 0) { delete lobbies[code]; }
+      else { io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) }); }
     });
     Object.keys(activeRooms).forEach(roomId => {
       const room = activeRooms[roomId];
@@ -102,6 +169,30 @@ io.on('connection', (socket) => {
     });
   });
 });
+
+function lobbyInfo(lobby) {
+  return {
+    code: lobby.code, gameType: lobby.gameType, mode: lobby.mode,
+    mapId: lobby.mapId, host: lobby.host, needed: lobby.needed,
+    players: lobby.players.map(p => ({ id: p.id, name: p.name, grade: p.grade }))
+  };
+}
+
+function startLobbyGame(lobby) {
+  const roomId = 'lobby_' + lobby.code + '_' + Date.now();
+  const room = { id: roomId, gameType: lobby.gameType, mode: lobby.mode, mapId: lobby.mapId, players: [], state: null, started: false };
+  lobby.players.forEach((p, i) => {
+    room.players.push({ ...p, team: lobby.mode === '2v2' ? (i < 2 ? 0 : 1) : i, ready: false });
+    const ps = io.sockets.sockets.get(p.socketId);
+    if (ps) { ps.leave('lobby_' + lobby.code); ps.join(roomId); }
+  });
+  activeRooms[roomId] = room;
+  initGameState(room);
+  room.started = true;
+  io.to(roomId).emit('match_found', { roomId, players: room.players, gameType: lobby.gameType, mode: lobby.mode, mapId: lobby.mapId, state: room.state });
+  startGameLoop(roomId);
+  delete lobbies[lobby.code];
+}
 
 function rectOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
   return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
@@ -139,11 +230,41 @@ function generateWalls(count, W, H, spawnZones) {
   return walls;
 }
 
+const MAPS = {
+  shooter: {
+    default: { name: 'Oddiy', wallCount: 8, color: '#1a1a2e' },
+    city: { name: 'Shahar', wallCount: 14, color: '#1c2333' },
+    desert: { name: 'Cho\'l', wallCount: 5, color: '#2a1f0e' },
+    maze: { name: 'Labirint', wallCount: 20, color: '#0e1a2a' }
+  },
+  tanks: {
+    default: { name: 'Oddiy', wallCount: 10, color: '#1a1a2e' },
+    fortress: { name: 'Qal\'a', wallCount: 16, color: '#1a2010' },
+    open: { name: 'Ochiq maydon', wallCount: 4, color: '#1a1520' },
+    ruins: { name: 'Xarobalar', wallCount: 22, color: '#201818' }
+  },
+  arena: {
+    default: { name: 'Oddiy', color: '#1a1a2e' },
+    colosseum: { name: 'Kolizey', color: '#2a1a10' },
+    ice: { name: 'Muz', color: '#0e1a2e' }
+  }
+};
+
+function getMapConfig(gameType, mapId) {
+  const gameMaps = MAPS[gameType] || {};
+  return gameMaps[mapId] || gameMaps['default'] || { wallCount: 8, color: '#1a1a2e' };
+}
+
 function initGameState(room) {
   const W = 800, H = 600;
+  const mapCfg = getMapConfig(room.gameType, room.mapId || 'default');
+  room.state = room.state || {};
+  room.state.mapId = room.mapId || 'default';
+  room.state.mapColor = mapCfg.color;
+
   if (room.gameType === 'shooter') {
     const spawnPositions = [{ x: 100, y: H / 2 }, { x: W - 100, y: H / 2 }];
-    room.state = { w: W, h: H, bullets: [], items: [], time: 90 };
+    Object.assign(room.state, { w: W, h: H, bullets: [], items: [], time: 90 });
     room.players.forEach((p, i) => {
       const pos = spawnPositions[i] || spawnPositions[0];
       p.x = pos.x; p.y = pos.y;
@@ -155,20 +276,20 @@ function initGameState(room) {
       p.weapon = 'pistol';
       p.input = {};
     });
-    const walls = generateWalls(8, W, H, spawnPositions);
+    const walls = generateWalls(mapCfg.wallCount || 8, W, H, spawnPositions);
     walls.forEach(w => room.state.items.push({ type: 'wall', ...w }));
   } else if (room.gameType === 'tanks') {
     const spawnPositions = [{ x: 80, y: 80 }, { x: W - 80, y: H - 80 }, { x: W - 80, y: 80 }, { x: 80, y: H - 80 }];
-    room.state = { w: W, h: H, bullets: [], walls: [], time: 120 };
+    Object.assign(room.state, { w: W, h: H, bullets: [], walls: [], time: 120 });
     room.players.forEach((p, i) => {
       const pos = spawnPositions[i] || spawnPositions[0];
       p.x = pos.x; p.y = pos.y;
       p.hp = 100; p.angle = 0; p.turretAngle = 0;
       p.speed = 2.5; p.score = 0; p.lastShot = 0; p.input = {};
     });
-    room.state.walls = generateWalls(10, W, H, spawnPositions);
+    room.state.walls = generateWalls(mapCfg.wallCount || 10, W, H, spawnPositions);
   } else if (room.gameType === 'arena') {
-    room.state = { w: W, h: H, projectiles: [], time: 90 };
+    Object.assign(room.state, { w: W, h: H, projectiles: [], time: 90 });
     room.players.forEach((p, i) => {
       p.x = i === 0 ? 150 : W - 150;
       p.y = H / 2;

@@ -53,9 +53,18 @@ const userSchema = new mongoose.Schema(
     lastActiveDate: { type: Date, default: null },
     gamePoints: { type: Number, default: 0 },
     gamesPlayed: { type: Number, default: 0 },
+    friends: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [] },
+    friendCode: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );
+
+userSchema.pre('validate', function (next) {
+  if (!this.friendCode) {
+    this.friendCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+  }
+  next();
+});
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
@@ -99,6 +108,8 @@ userSchema.methods.toPublic = function () {
     lastActiveDate: this.lastActiveDate,
     gamePoints: this.gamePoints || 0,
     gamesPlayed: this.gamesPlayed || 0,
+    friends: this.friends || [],
+    friendCode: this.friendCode || '',
     createdAt: this.createdAt,
   };
 };

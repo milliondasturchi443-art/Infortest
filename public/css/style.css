@@ -1015,3 +1015,5 @@ body.font-large { font-size:18px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 #onlineMobileControls { background:rgba(0,0,0,0.3); border-radius:var(--radius) var(--radius) 0 0; padding:8px; }
 #onlineCanvas { image-rendering:pixelated; }
+.map-option:hover { border-color:var(--primary) !important; background:rgba(45,109,168,0.08); }
+.map-selected { border-color:var(--primary) !important; background:rgba(45,109,168,0.15) !important; box-shadow:0 0 0 2px rgba(45,109,168,0.3); }

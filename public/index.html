@@ -375,6 +375,14 @@
           <h2 class="section-title">🌐 Online o'yinlar</h2>
           <p class="section-desc">Boshqa o'quvchilar bilan real vaqtda o'ynang!</p>
           <div id="onlineLobby">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+              <button class="btn btn-sm btn-primary" onclick="showJoinLobbyDirect()">🔑 Kodga qo'shilish</button>
+              <button class="btn btn-sm btn-outline" onclick="showFriendsPanel()">👥 Do'stlar</button>
+            </div>
+            <div id="friendsPanel" style="display:none;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+              <div style="font-weight:800;font-size:.95rem;margin-bottom:10px">👥 Do'stlar</div>
+              <div id="friendsList"><p style="color:var(--muted)">Yuklanmoqda...</p></div>
+            </div>
             <div class="games-grid" id="onlineGamesList">
               <div class="game-card online-card" onclick="openOnlineGame('shooter','1v1')">
                 <span class="game-icon">🔫</span>

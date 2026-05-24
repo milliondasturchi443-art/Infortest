@@ -1,6 +1,6 @@
 // ═══════ ONLINE MULTIPLAYER GAMES ═══════
 var socket = null;
-var onlineState = { inQueue: false, inGame: false, roomId: null, gameType: null, mode: null, myId: null };
+var onlineState = { inQueue: false, inGame: false, inLobby: false, lobbyCode: null, roomId: null, gameType: null, mode: null, myId: null, mapId: 'default' };
 var onlineKeys = {};
 var onlineTouchAngle = null;
 var onlineTouchShoot = false;
@@ -8,6 +8,26 @@ var onlineJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
 var onlineAimJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
 var onlineMyPos = { x: 400, y: 300 };
 var onlineInputInterval = null;
+
+var GAME_MAPS = {
+  shooter: [
+    { id: 'default', name: 'Oddiy', icon: '🏙️', desc: '8 ta devor' },
+    { id: 'city', name: 'Shahar', icon: '🌆', desc: 'Ko\'p devorlar' },
+    { id: 'desert', name: 'Cho\'l', icon: '🏜️', desc: 'Kam pana joy' },
+    { id: 'maze', name: 'Labirint', icon: '🏗️', desc: 'Juda ko\'p devor' }
+  ],
+  tanks: [
+    { id: 'default', name: 'Oddiy', icon: '🏙️', desc: '10 ta devor' },
+    { id: 'fortress', name: 'Qal\'a', icon: '🏰', desc: 'Ko\'p pana joy' },
+    { id: 'open', name: 'Ochiq maydon', icon: '🌾', desc: 'Kam pana' },
+    { id: 'ruins', name: 'Xarobalar', icon: '🏚️', desc: 'Juda ko\'p devor' }
+  ],
+  arena: [
+    { id: 'default', name: 'Oddiy', icon: '⚔️', desc: 'Klassik arena' },
+    { id: 'colosseum', name: 'Kolizey', icon: '🏛️', desc: 'Rim arenaси' },
+    { id: 'ice', name: 'Muz', icon: '❄️', desc: 'Muzlik arena' }
+  ]
+};
 
 function getSocket() {
   if (!socket || !socket.connected) {
@@ -28,6 +48,7 @@ function setupSocketEvents() {
     onlineState.gameType = data.gameType;
     onlineState.mode = data.mode;
     onlineState.inQueue = false;
+    onlineState.inLobby = false;
     onlineState.inGame = true;
     startOnlineGame(data);
   });
@@ -43,39 +64,281 @@ function setupSocketEvents() {
 
   socket.on('player_disconnected', function (data) {
     var hud = document.getElementById('onlineHUD');
-    if (hud) hud.innerHTML += '<span style="color:var(--red);margin-left:12px">O\'yinchi chiqib ketdi!</span>';
+    if (hud) hud.innerHTML += '<span style="color:#ef4444;margin-left:12px">O\'yinchi chiqib ketdi!</span>';
+  });
+
+  // lobby events
+  socket.on('lobby_created', function (data) {
+    onlineState.inLobby = true;
+    onlineState.lobbyCode = data.code;
+    renderLobbyView(data.lobby);
+  });
+
+  socket.on('lobby_update', function (data) {
+    renderLobbyView(data.lobby);
+  });
+
+  socket.on('lobby_error', function (data) {
+    alert(data.error);
   });
 }
 
-function openOnlineGame(gameType, mode) {
+// ═══ MAP PICKER ═══
+function showGameConfig(gameType, mode) {
   if (!currentUser) { alert('Avval tizimga kiring!'); return; }
   onlineState.myId = currentUser.id;
-  var s = getSocket();
+  onlineState.gameType = gameType;
+  onlineState.mode = mode;
+  onlineState.mapId = 'default';
 
   document.getElementById('onlineLobby').style.display = 'none';
   var mm = document.getElementById('onlineMatchmaking');
   mm.style.display = 'block';
+
+  var maps = GAME_MAPS[gameType] || [];
+  var html = '<div style="max-width:500px;margin:0 auto;padding:20px">';
+  html += '<h2 style="text-align:center;font-size:1.2rem;margin-bottom:6px">' + getGameTitle(gameType) + ' — ' + mode.toUpperCase() + '</h2>';
+  html += '<p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:16px">Xarita va usulni tanlang</p>';
+
+  // map selection
+  html += '<div style="margin-bottom:16px"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:8px">🗺️ Xarita tanlang:</label>';
+  html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="mapGrid">';
+  maps.forEach(function (m) {
+    html += '<div class="map-option' + (m.id === 'default' ? ' map-selected' : '') + '" data-map="' + m.id + '" onclick="selectMap(\'' + m.id + '\')" style="padding:12px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s">';
+    html += '<div style="font-size:1.5rem">' + m.icon + '</div>';
+    html += '<div style="font-weight:700;font-size:.85rem">' + m.name + '</div>';
+    html += '<div style="font-size:.7rem;color:var(--muted)">' + m.desc + '</div></div>';
+  });
+  html += '</div></div>';
+
+  // action buttons
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">';
+  html += '<button class="btn btn-sm btn-primary" onclick="startMatchmaking()">🔍 Raqib qidirish</button>';
+  html += '<button class="btn btn-sm btn-green" onclick="createLobby()">🏠 Lobby yaratish</button>';
+  html += '<button class="btn btn-sm btn-outline" onclick="showJoinLobby()">🔑 Kodga qo\'shilish</button>';
+  html += '</div>';
+  html += '<div style="margin-top:12px;text-align:center"><button class="btn btn-sm btn-outline" onclick="backToOnlineLobby()">← Orqaga</button></div>';
+  html += '</div>';
+  mm.innerHTML = html;
+}
+
+function selectMap(mapId) {
+  onlineState.mapId = mapId;
+  var options = document.querySelectorAll('.map-option');
+  options.forEach(function (o) { o.classList.remove('map-selected'); });
+  var sel = document.querySelector('[data-map="' + mapId + '"]');
+  if (sel) sel.classList.add('map-selected');
+}
+
+// ═══ MATCHMAKING ═══
+function openOnlineGame(gameType, mode) {
+  showGameConfig(gameType, mode);
+}
+
+function startMatchmaking() {
+  var s = getSocket();
+  var mm = document.getElementById('onlineMatchmaking');
   mm.innerHTML =
     '<div class="game-area" style="text-align:center;padding:40px 20px">' +
     '<div class="matchmaking-spinner"></div>' +
-    '<h2 style="font-size:1.3rem;margin:20px 0 8px">' + getGameTitle(gameType) + ' — ' + mode.toUpperCase() + '</h2>' +
+    '<h2 style="font-size:1.3rem;margin:20px 0 8px">' + getGameTitle(onlineState.gameType) + ' — ' + onlineState.mode.toUpperCase() + '</h2>' +
     '<p style="color:var(--muted);margin-bottom:12px">Raqib qidirilmoqda...</p>' +
     '<p style="font-size:1.5rem;font-weight:900;color:var(--primary)" id="queueCount">1</p>' +
     '<p style="color:var(--muted);font-size:.8rem;margin-bottom:20px">o\'yinchi navbatda</p>' +
-    '<p style="color:var(--muted);font-size:.75rem;margin-bottom:20px" id="matchTip">Boshqa brauzer oynasida ham kiring!</p>' +
+    '<p style="color:var(--muted);font-size:.75rem;margin-bottom:20px">Boshqa brauzer oynasida ham kiring!</p>' +
     '<button class="btn btn-sm btn-outline" onclick="leaveOnlineQueue()">Bekor qilish</button></div>';
 
   onlineState.inQueue = true;
-  onlineState.gameType = gameType;
-  onlineState.mode = mode;
-
   s.emit('join_queue', {
-    gameType: gameType,
-    mode: mode,
+    gameType: onlineState.gameType,
+    mode: onlineState.mode,
+    mapId: onlineState.mapId,
     player: { id: currentUser.id, name: currentUser.name, grade: currentUser.grade }
   });
 }
 
+// ═══ LOBBY ═══
+function createLobby() {
+  var s = getSocket();
+  s.emit('create_lobby', {
+    gameType: onlineState.gameType,
+    mode: onlineState.mode,
+    mapId: onlineState.mapId,
+    player: { id: currentUser.id, name: currentUser.name, grade: currentUser.grade }
+  });
+}
+
+function showJoinLobby() {
+  var mm = document.getElementById('onlineMatchmaking');
+  mm.innerHTML =
+    '<div style="max-width:400px;margin:0 auto;padding:30px 20px;text-align:center">' +
+    '<h2 style="font-size:1.2rem;margin-bottom:16px">🔑 Lobby kodini kiriting</h2>' +
+    '<input type="text" id="joinCodeInput" placeholder="Masalan: RF9CA" maxlength="5" style="font-size:1.8rem;text-align:center;letter-spacing:6px;font-weight:900;text-transform:uppercase;width:200px;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--card);color:var(--text)">' +
+    '<div style="margin-top:16px;display:flex;gap:10px;justify-content:center">' +
+    '<button class="btn btn-sm btn-primary" onclick="joinLobbyByCode()">Kirish</button>' +
+    '<button class="btn btn-sm btn-outline" onclick="showGameConfig(onlineState.gameType,onlineState.mode)">← Orqaga</button>' +
+    '</div></div>';
+  setTimeout(function () { var inp = document.getElementById('joinCodeInput'); if (inp) inp.focus(); }, 100);
+}
+
+function joinLobbyByCode() {
+  var code = (document.getElementById('joinCodeInput').value || '').trim().toUpperCase();
+  if (code.length < 3) { alert('Kodni kiriting!'); return; }
+  var s = getSocket();
+  s.emit('join_lobby', { code: code, player: { id: currentUser.id, name: currentUser.name, grade: currentUser.grade } });
+}
+
+function renderLobbyView(lobby) {
+  var mm = document.getElementById('onlineMatchmaking');
+  mm.style.display = 'block';
+  document.getElementById('onlineLobby').style.display = 'none';
+
+  var isHost = lobby.host === currentUser.id;
+  var maps = GAME_MAPS[lobby.gameType] || [];
+  var curMap = maps.find(function (m) { return m.id === lobby.mapId; }) || maps[0];
+
+  var html = '<div style="max-width:500px;margin:0 auto;padding:20px">';
+  html += '<div style="text-align:center;margin-bottom:16px">';
+  html += '<h2 style="font-size:1.1rem;margin-bottom:4px">' + getGameTitle(lobby.gameType) + ' — ' + lobby.mode.toUpperCase() + '</h2>';
+  html += '<div style="background:var(--card);border:2px dashed var(--primary);border-radius:12px;padding:16px;margin:12px auto;max-width:280px">';
+  html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">Lobby kodi:</div>';
+  html += '<div style="font-size:2rem;font-weight:900;letter-spacing:6px;color:var(--primary)" id="lobbyCodeDisplay">' + lobby.code + '</div>';
+  html += '<button class="btn btn-sm btn-outline" style="margin-top:8px;font-size:.7rem" onclick="copyLobbyCode(\'' + lobby.code + '\')">📋 Nusxalash</button>';
+  html += '</div></div>';
+
+  // players
+  html += '<div style="margin-bottom:16px"><div style="font-weight:700;font-size:.85rem;margin-bottom:8px">O\'yinchilar (' + lobby.players.length + '/' + lobby.needed + '):</div>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  lobby.players.forEach(function (p, i) {
+    var isMe = p.id === currentUser.id;
+    html += '<div style="padding:10px 16px;border-radius:10px;background:' + (isMe ? 'var(--primary)' : 'var(--card)') + ';color:' + (isMe ? '#fff' : 'var(--text)') + ';font-weight:700;font-size:.85rem;border:2px solid ' + (p.id === lobby.host ? 'var(--primary)' : 'var(--border)') + '">';
+    html += (p.id === lobby.host ? '👑 ' : '') + p.name + (p.grade ? ' (' + p.grade + ')' : '') + '</div>';
+  });
+  for (var i = lobby.players.length; i < lobby.needed; i++) {
+    html += '<div style="padding:10px 16px;border-radius:10px;background:var(--bg);color:var(--muted);font-size:.85rem;border:2px dashed var(--border)">Kutilmoqda...</div>';
+  }
+  html += '</div></div>';
+
+  // map (host can change)
+  html += '<div style="margin-bottom:16px"><div style="font-weight:700;font-size:.85rem;margin-bottom:6px">🗺️ Xarita: ' + (curMap ? curMap.icon + ' ' + curMap.name : lobby.mapId) + '</div>';
+  if (isHost) {
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">';
+    maps.forEach(function (m) {
+      html += '<div class="map-option' + (m.id === lobby.mapId ? ' map-selected' : '') + '" onclick="changeLobbyMap(\'' + lobby.code + '\',\'' + m.id + '\')" style="padding:8px;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:.8rem">';
+      html += m.icon + ' ' + m.name + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div style="text-align:center"><button class="btn btn-sm btn-outline" onclick="leaveLobby(\'' + lobby.code + '\')">Chiqish</button></div>';
+  html += '</div>';
+  mm.innerHTML = html;
+}
+
+function copyLobbyCode(code) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code);
+    var el = document.getElementById('lobbyCodeDisplay');
+    if (el) { el.textContent = 'Nusxalandi!'; setTimeout(function () { el.textContent = code; }, 1500); }
+  }
+}
+
+function changeLobbyMap(code, mapId) {
+  var s = getSocket();
+  s.emit('lobby_change_map', { code: code, mapId: mapId, playerId: currentUser.id });
+}
+
+function leaveLobby(code) {
+  if (socket) socket.emit('leave_lobby', { code: code, playerId: currentUser.id });
+  onlineState.inLobby = false;
+  onlineState.lobbyCode = null;
+  backToOnlineLobby();
+}
+
+// ═══ FRIENDS ═══
+function showFriendsPanel() {
+  var panel = document.getElementById('friendsPanel');
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  loadFriends();
+}
+
+function loadFriends() {
+  if (!currentUser) return;
+  fetch('/api/auth/friends/' + currentUser.id)
+    .then(function (r) { return r.json(); })
+    .then(function (friends) {
+      var html = '<div style="margin-bottom:12px">';
+      html += '<div style="font-weight:700;font-size:.9rem;margin-bottom:8px">Sizning kodingiz:</div>';
+      html += '<div style="font-size:1.3rem;font-weight:900;letter-spacing:4px;color:var(--primary);background:var(--bg);padding:8px 16px;border-radius:8px;display:inline-block">' + (currentUser.friendCode || '...') + '</div>';
+      html += '</div>';
+      html += '<div style="margin-bottom:12px"><div style="display:flex;gap:6px">';
+      html += '<input type="text" id="addFriendCode" placeholder="Kod kiriting" maxlength="5" style="flex:1;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:.85rem;text-transform:uppercase;background:var(--card);color:var(--text)">';
+      html += '<button class="btn btn-sm btn-primary" onclick="addFriend()">Qo\'shish</button></div>';
+      html += '<div id="addFriendMsg" style="font-size:.75rem;margin-top:4px"></div></div>';
+
+      if (friends.length > 0) {
+        html += '<div style="font-weight:700;font-size:.85rem;margin-bottom:6px">Do\'stlar (' + friends.length + '):</div>';
+        friends.forEach(function (f) {
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--bg);margin-bottom:4px">';
+          html += '<div><span style="font-weight:700">' + f.name + '</span> <span style="font-size:.75rem;color:var(--muted)">' + (f.grade || '') + ' | ' + (f.gamePoints || 0) + ' ochko</span></div>';
+          html += '<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:.65rem" onclick="removeFriend(\'' + f.id + '\')">✕</button></div>';
+        });
+      } else {
+        html += '<p style="color:var(--muted);font-size:.8rem;text-align:center">Hali do\'stlar yo\'q</p>';
+      }
+      document.getElementById('friendsList').innerHTML = html;
+    })
+    .catch(function () {
+      document.getElementById('friendsList').innerHTML = '<p style="color:var(--muted)">Yuklanmadi</p>';
+    });
+}
+
+function addFriend() {
+  var code = (document.getElementById('addFriendCode').value || '').trim().toUpperCase();
+  if (!code) return;
+  fetch('/api/auth/friend/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: currentUser.id, friendCode: code })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var msg = document.getElementById('addFriendMsg');
+      if (data.error) { msg.innerHTML = '<span style="color:#ef4444">' + data.error + '</span>'; }
+      else { msg.innerHTML = '<span style="color:#22c55e">' + data.friend.name + ' qo\'shildi!</span>'; document.getElementById('addFriendCode').value = ''; loadFriends(); }
+    })
+    .catch(function () { });
+}
+
+function removeFriend(friendId) {
+  fetch('/api/auth/friend/remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: currentUser.id, friendId: friendId })
+  }).then(function () { loadFriends(); });
+}
+
+function showJoinLobbyDirect() {
+  if (!currentUser) { alert('Avval tizimga kiring!'); return; }
+  onlineState.myId = currentUser.id;
+  document.getElementById('onlineLobby').style.display = 'none';
+  var mm = document.getElementById('onlineMatchmaking');
+  mm.style.display = 'block';
+  mm.innerHTML =
+    '<div style="max-width:400px;margin:0 auto;padding:30px 20px;text-align:center">' +
+    '<h2 style="font-size:1.2rem;margin-bottom:16px">🔑 Lobby kodini kiriting</h2>' +
+    '<input type="text" id="joinCodeInput" placeholder="Masalan: RF9CA" maxlength="5" style="font-size:1.8rem;text-align:center;letter-spacing:6px;font-weight:900;text-transform:uppercase;width:200px;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--card);color:var(--text)">' +
+    '<div style="margin-top:16px;display:flex;gap:10px;justify-content:center">' +
+    '<button class="btn btn-sm btn-primary" onclick="joinLobbyByCode()">Kirish</button>' +
+    '<button class="btn btn-sm btn-outline" onclick="backToOnlineLobby()">← Orqaga</button>' +
+    '</div></div>';
+  var s = getSocket();
+  setTimeout(function () { var inp = document.getElementById('joinCodeInput'); if (inp) inp.focus(); }, 100);
+}
+
+// ═══ COMMON ═══
 function getGameTitle(type) {
   if (type === 'shooter') return '🔫 2D Shooter';
   if (type === 'tanks') return '🔵 2D Tanklar';
@@ -94,7 +357,9 @@ function leaveOnlineQueue() {
 function backToOnlineLobby() {
   onlineState.inGame = false;
   onlineState.inQueue = false;
+  onlineState.inLobby = false;
   onlineState.roomId = null;
+  onlineState.lobbyCode = null;
   if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
   document.getElementById('onlineLobby').style.display = 'block';
   document.getElementById('onlineMatchmaking').style.display = 'none';
@@ -114,12 +379,9 @@ function startOnlineGame(data) {
 
   var canvas = document.getElementById('onlineCanvas');
   resizeOnlineCanvas(canvas);
-
   setupOnlineControls(canvas);
 
-  if (isMobile()) {
-    showMobileControls();
-  }
+  if (isMobile()) showMobileControls();
 }
 
 function resizeOnlineCanvas(canvas) {
@@ -137,14 +399,13 @@ function isMobile() {
 // ═══ CONTROLS ═══
 function onlineKeyDown(e) {
   var k = e.key.toLowerCase();
-  if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].indexOf(k) !== -1) {
+  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].indexOf(k) !== -1) {
     e.preventDefault();
     onlineKeys[k] = true;
   }
 }
 function onlineKeyUp(e) {
-  var k = e.key.toLowerCase();
-  onlineKeys[k] = false;
+  onlineKeys[e.key.toLowerCase()] = false;
 }
 
 function setupOnlineControls(canvas) {
@@ -177,11 +438,8 @@ function showMobileControls() {
     '<div id="aimJoystick" style="width:140px;height:140px;border-radius:50%;background:rgba(255,50,50,0.15);border:2px solid rgba(255,50,50,0.3);position:relative;touch-action:none">' +
     '<div id="aimJoystickKnob" style="width:50px;height:50px;border-radius:50%;background:rgba(255,50,50,0.5);position:absolute;top:45px;left:45px;pointer-events:none"></div></div></div>';
 
-  var moveEl = document.getElementById('moveJoystick');
-  var aimEl = document.getElementById('aimJoystick');
-
-  setupJoystick(moveEl, 'moveJoystickKnob', onlineJoystick);
-  setupJoystick(aimEl, 'aimJoystickKnob', onlineAimJoystick);
+  setupJoystick(document.getElementById('moveJoystick'), 'moveJoystickKnob', onlineJoystick);
+  setupJoystick(document.getElementById('aimJoystick'), 'aimJoystickKnob', onlineAimJoystick);
 }
 
 function setupJoystick(el, knobId, state) {
@@ -277,12 +535,11 @@ function renderOnlineGame(data) {
   var ctx = canvas.getContext('2d');
   var W = 800, H = 600;
 
-  // track own position for mouse aim
   data.players.forEach(function (p) {
     if (p.id === onlineState.myId) { onlineMyPos.x = p.x; onlineMyPos.y = p.y; }
   });
 
-  ctx.fillStyle = GAME_COLORS.bg;
+  ctx.fillStyle = data.state.mapColor || GAME_COLORS.bg;
   ctx.fillRect(0, 0, W, H);
 
   drawGrid(ctx, W, H);
@@ -358,7 +615,6 @@ function renderShooter(ctx, data, W, H) {
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle || 0);
 
-    // body
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 10;
@@ -367,11 +623,9 @@ function renderShooter(ctx, data, W, H) {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // gun
     ctx.fillStyle = '#d1d5db';
     ctx.fillRect(10, -3, 12, 6);
 
-    // visor
     ctx.fillStyle = isMe ? '#fbbf24' : '#e5e7eb';
     ctx.beginPath();
     ctx.arc(4, 0, 4, 0, Math.PI * 2);
@@ -407,7 +661,6 @@ function renderTanks(ctx, data, W, H) {
     ctx.save();
     ctx.translate(p.x, p.y);
 
-    // tank body
     var bodyAngle = p.angle || 0;
     ctx.save();
     ctx.rotate(bodyAngle);
@@ -421,7 +674,6 @@ function renderTanks(ctx, data, W, H) {
     ctx.fillRect(12, -14, 6, 28);
     ctx.restore();
 
-    // turret
     var tAngle = p.turretAngle || bodyAngle;
     ctx.save();
     ctx.rotate(tAngle);
@@ -442,7 +694,6 @@ function renderTanks(ctx, data, W, H) {
 
 // ═══ ARENA RENDERER ═══
 function renderArena(ctx, data, W, H) {
-  // arena circle decoration
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -452,7 +703,6 @@ function renderArena(ctx, data, W, H) {
   ctx.arc(W / 2, H / 2, 100, 0, Math.PI * 2);
   ctx.stroke();
 
-  // projectiles
   (data.state.projectiles || []).forEach(function (p) {
     ctx.fillStyle = '#f97316';
     ctx.shadowColor = '#f97316';
@@ -471,7 +721,6 @@ function renderArena(ctx, data, W, H) {
     ctx.save();
     ctx.translate(p.x, p.y);
 
-    // body
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 12;
@@ -480,20 +729,17 @@ function renderArena(ctx, data, W, H) {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // sword direction
     ctx.rotate(p.angle || 0);
     ctx.fillStyle = '#e5e7eb';
     ctx.fillRect(14, -2, 14, 4);
     ctx.fillStyle = '#fbbf24';
     ctx.fillRect(26, -4, 4, 8);
 
-    // shield
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fillRect(-6, -10, 4, 20);
 
     ctx.restore();
 
-    // cooldown ring
     if (p.attackCooldown > 0) {
       ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.lineWidth = 2;
@@ -539,7 +785,6 @@ function showOnlineResult(data) {
   mm.style.display = 'block';
 
   var me = data.players.find(function (p) { return p.id === onlineState.myId; });
-  var myScore = me ? me.score : 0;
   var isWinner = data.winner === (me ? me.name : '');
 
   var html = '<div class="game-area" style="text-align:center;padding:30px 20px">';
