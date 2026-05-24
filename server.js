@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
     const lobby = {
       code, gameType, mode, mapId: mapId || 'default',
       host: player.id, needed,
-      players: [{ ...player, socketId: socket.id }]
+      players: [{ ...player, socketId: socket.id, isBot: false }]
     };
     lobbies[code] = lobby;
     socket.join('lobby_' + code);
@@ -102,17 +102,13 @@ io.on('connection', (socket) => {
 
   socket.on('join_lobby', (data) => {
     const { code, player } = data;
-    const lobby = lobbies[code.toUpperCase()];
+    const lobby = lobbies[(code || '').toUpperCase()];
     if (!lobby) return socket.emit('lobby_error', { error: 'Lobby topilmadi. Kodni tekshiring.' });
     if (lobby.players.length >= lobby.needed) return socket.emit('lobby_error', { error: 'Lobby to\'la.' });
     if (lobby.players.find(p => p.id === player.id)) return socket.emit('lobby_error', { error: 'Siz allaqachon lobbida.' });
-    lobby.players.push({ ...player, socketId: socket.id });
+    lobby.players.push({ ...player, socketId: socket.id, isBot: false });
     socket.join('lobby_' + code);
     io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
-
-    if (lobby.players.length >= lobby.needed) {
-      startLobbyGame(lobby);
-    }
   });
 
   socket.on('leave_lobby', (data) => {
@@ -134,6 +130,54 @@ io.on('connection', (socket) => {
     io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
   });
 
+  socket.on('lobby_add_bot', (data) => {
+    const { code, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    if (lobby.players.length >= lobby.needed) return socket.emit('lobby_error', { error: 'Lobby to\'la.' });
+    const botNames = ['Bot Akbar', 'Bot Sherzod', 'Bot Jasur', 'Bot Sardor', 'Bot Nodir', 'Bot Dilshod'];
+    const botId = 'bot_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+    const usedNames = lobby.players.map(p => p.name);
+    let botName = botNames.find(n => !usedNames.includes(n)) || 'Bot ' + lobby.players.length;
+    lobby.players.push({ id: botId, name: botName, grade: 'BOT', socketId: null, isBot: true });
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
+  socket.on('lobby_remove_player', (data) => {
+    const { code, playerId, targetId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    lobby.players = lobby.players.filter(p => p.id !== targetId);
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
+  socket.on('lobby_start', (data) => {
+    const { code, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    if (lobby.players.length < 2) return socket.emit('lobby_error', { error: 'Kamida 2 o\'yinchi kerak.' });
+    startLobbyGame(lobby);
+  });
+
+  socket.on('lobby_change_mode', (data) => {
+    const { code, mode, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    lobby.mode = mode;
+    lobby.needed = mode === '2v2' ? 4 : 2;
+    while (lobby.players.length > lobby.needed) lobby.players.pop();
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
+  socket.on('lobby_change_game', (data) => {
+    const { code, gameType, playerId } = data;
+    const lobby = lobbies[code];
+    if (!lobby || lobby.host !== playerId) return;
+    lobby.gameType = gameType;
+    lobby.mapId = 'default';
+    io.to('lobby_' + code).emit('lobby_update', { lobby: lobbyInfo(lobby) });
+  });
+
   // ─── GAME INPUT ───
   socket.on('game_input', (data) => {
     const { roomId, playerId, input } = data;
@@ -141,6 +185,32 @@ io.on('connection', (socket) => {
     if (!room || !room.started) return;
     const player = room.players.find(p => p.id === playerId);
     if (player) player.input = input;
+  });
+
+  socket.on('buy_weapon', (data) => {
+    const { roomId, playerId, weaponId } = data;
+    const room = activeRooms[roomId];
+    if (!room || room.gameType !== 'shooter') return;
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return;
+    const wep = WEAPONS[weaponId];
+    if (!wep) return;
+    if (player.money < wep.price) return socket.emit('buy_error', { error: 'Pul yetarli emas!' });
+    player.money -= wep.price;
+    player.weapon = weaponId;
+    socket.emit('buy_ok', { weapon: weaponId, money: player.money });
+  });
+
+  socket.on('buy_armor', (data) => {
+    const { roomId, playerId } = data;
+    const room = activeRooms[roomId];
+    if (!room || room.gameType !== 'shooter') return;
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return;
+    if (player.money < 650) return socket.emit('buy_error', { error: 'Pul yetarli emas!' });
+    player.money -= 650;
+    player.armor = 100;
+    socket.emit('buy_ok', { armor: 100, money: player.money });
   });
 
   // ─── DISCONNECT ───
@@ -174,7 +244,7 @@ function lobbyInfo(lobby) {
   return {
     code: lobby.code, gameType: lobby.gameType, mode: lobby.mode,
     mapId: lobby.mapId, host: lobby.host, needed: lobby.needed,
-    players: lobby.players.map(p => ({ id: p.id, name: p.name, grade: p.grade }))
+    players: lobby.players.map(p => ({ id: p.id, name: p.name, grade: p.grade, isBot: !!p.isBot }))
   };
 }
 
@@ -191,6 +261,7 @@ function startLobbyGame(lobby) {
   room.started = true;
   io.to(roomId).emit('match_found', { roomId, players: room.players, gameType: lobby.gameType, mode: lobby.mode, mapId: lobby.mapId, state: room.state });
   startGameLoop(roomId);
+  if (room.players.some(p => p.isBot)) startBotAI(roomId);
   delete lobbies[lobby.code];
 }
 
@@ -264,16 +335,17 @@ function initGameState(room) {
 
   if (room.gameType === 'shooter') {
     const spawnPositions = [{ x: 100, y: H / 2 }, { x: W - 100, y: H / 2 }];
-    Object.assign(room.state, { w: W, h: H, bullets: [], items: [], time: 90 });
+    Object.assign(room.state, { w: W, h: H, bullets: [], items: [], time: 120, killFeed: [] });
     room.players.forEach((p, i) => {
       const pos = spawnPositions[i] || spawnPositions[0];
       p.x = pos.x; p.y = pos.y;
-      p.hp = 100;
+      p.hp = 100; p.armor = 0;
       p.angle = i === 0 ? 0 : Math.PI;
       p.speed = 3;
-      p.score = 0;
+      p.score = 0; p.deaths = 0;
       p.lastShot = 0;
       p.weapon = 'pistol';
+      p.money = 800;
       p.input = {};
     });
     const walls = generateWalls(mapCfg.wallCount || 8, W, H, spawnPositions);
@@ -323,8 +395,9 @@ function startGameLoop(roomId) {
 
     updateGame(room, dt);
     io.to(roomId).emit('game_state', { players: room.players.map(p => ({
-      id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, hp: p.hp,
-      angle: p.angle, turretAngle: p.turretAngle, score: p.score, weapon: p.weapon,
+      id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, hp: p.hp, armor: p.armor || 0,
+      angle: p.angle, turretAngle: p.turretAngle, score: p.score, deaths: p.deaths || 0,
+      weapon: p.weapon, money: p.money || 0, isBot: !!p.isBot,
       attackCooldown: p.attackCooldown, disconnected: p.disconnected
     })), state: room.state });
   }, 1000 / 30);
@@ -372,11 +445,22 @@ function updateGame(room, dt) {
     if (inp.turretAngle !== undefined) p.turretAngle = inp.turretAngle;
 
     if (room.gameType === 'shooter' || room.gameType === 'tanks') {
-      if (inp.shoot && Date.now() - p.lastShot > 300) {
+      const wep = (room.gameType === 'shooter' && WEAPONS[p.weapon]) ? WEAPONS[p.weapon] : null;
+      const rate = wep ? wep.rate : (room.gameType === 'tanks' ? 500 : 300);
+      if (inp.shoot && Date.now() - p.lastShot > rate) {
         p.lastShot = Date.now();
         const a = room.gameType === 'tanks' ? (p.turretAngle != null ? p.turretAngle : p.angle) : p.angle;
-        const bSpeed = room.gameType === 'tanks' ? 7 : 8;
-        room.state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * bSpeed, vy: Math.sin(a) * bSpeed, owner: p.id, dmg: room.gameType === 'tanks' ? 25 : 15, life: 80 });
+        const bSpeed = wep ? wep.speed : (room.gameType === 'tanks' ? 7 : 8);
+        const dmg = wep ? wep.dmg : (room.gameType === 'tanks' ? 25 : 15);
+        const spread = wep && wep === WEAPONS.shotgun ? 0.15 : 0;
+        if (spread) {
+          for (let si = -1; si <= 1; si++) {
+            const sa = a + si * spread;
+            room.state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(sa) * bSpeed, vy: Math.sin(sa) * bSpeed, owner: p.id, dmg: Math.round(dmg / 3), life: 40, weapon: p.weapon });
+          }
+        } else {
+          room.state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * bSpeed, vy: Math.sin(a) * bSpeed, owner: p.id, dmg, life: 80, weapon: p.weapon });
+        }
       }
     }
     if (room.gameType === 'arena') {
@@ -406,12 +490,29 @@ function updateGame(room, dt) {
       }
       const dist = Math.sqrt((b.x - p.x) ** 2 + (b.y - p.y) ** 2);
       if (dist < 18) {
-        p.hp -= b.dmg;
+        let dmg = b.dmg;
+        if (p.armor > 0 && room.gameType === 'shooter') {
+          const absorbed = Math.min(p.armor, Math.round(dmg * 0.5));
+          p.armor -= absorbed;
+          dmg -= absorbed;
+        }
+        p.hp -= dmg;
         hit = true;
         if (p.hp <= 0) {
           p.hp = 0;
+          if (p.deaths !== undefined) p.deaths++;
           const shooter = room.players.find(pl => pl.id === b.owner);
-          if (shooter) shooter.score++;
+          if (shooter) {
+            shooter.score++;
+            if (room.gameType === 'shooter') {
+              shooter.money = Math.min(16000, (shooter.money || 0) + 300);
+              if (room.state.killFeed) {
+                room.state.killFeed.push({ killer: shooter.name, victim: p.name, weapon: b.weapon || 'pistol', time: Date.now() });
+                if (room.state.killFeed.length > 5) room.state.killFeed.shift();
+              }
+            }
+          }
+          if (room.gameType === 'shooter') p.money = Math.min(16000, (p.money || 0) + 200);
           setTimeout(() => { respawnPlayer(room, p); }, 2000);
         }
       }
@@ -458,6 +559,7 @@ function endGame(roomId) {
   const room = activeRooms[roomId];
   if (!room) return;
   if (room.loopInterval) clearInterval(room.loopInterval);
+  if (room.botInterval) clearInterval(room.botInterval);
   let winner = null;
   if (room.mode === '2v2') {
     const team0 = room.players.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0);
@@ -480,6 +582,50 @@ function endGame(roomId) {
 
   setTimeout(() => { delete activeRooms[roomId]; }, 10000);
 }
+
+// ═══ BOT AI ═══
+function startBotAI(roomId) {
+  const room = activeRooms[roomId];
+  if (!room) return;
+  room.botInterval = setInterval(() => {
+    if (!activeRooms[roomId]) { clearInterval(room.botInterval); return; }
+    room.players.forEach(bot => {
+      if (!bot.isBot || bot.hp <= 0 || bot.disconnected) return;
+      const enemies = room.players.filter(p => p.id !== bot.id && p.hp > 0 && !p.disconnected && (room.mode !== '2v2' || p.team !== bot.team));
+      if (enemies.length === 0) { bot.input = {}; return; }
+
+      let nearest = enemies[0], minDist = Infinity;
+      enemies.forEach(e => { const d = Math.sqrt((e.x - bot.x) ** 2 + (e.y - bot.y) ** 2); if (d < minDist) { minDist = d; nearest = e; } });
+
+      const angle = Math.atan2(nearest.y - bot.y, nearest.x - bot.x);
+      bot.input = { angle, turretAngle: angle, shoot: minDist < 350, attack: minDist < 250 };
+
+      if (minDist > 80) {
+        bot.input.up = Math.sin(angle) < -0.3;
+        bot.input.down = Math.sin(angle) > 0.3;
+        bot.input.left = Math.cos(angle) < -0.3;
+        bot.input.right = Math.cos(angle) > 0.3;
+      }
+
+      // random dodge
+      if (Math.random() < 0.03) {
+        const dirs = ['up', 'down', 'left', 'right'];
+        const d = dirs[Math.floor(Math.random() * 4)];
+        bot.input = { ...bot.input, up: d === 'up', down: d === 'down', left: d === 'left', right: d === 'right' };
+      }
+    });
+  }, 200);
+}
+
+// ═══ WEAPONS (CS2-STYLE) ═══
+const WEAPONS = {
+  pistol: { name: 'Pistolet', dmg: 15, rate: 350, speed: 8, price: 0 },
+  smg: { name: 'SMG', dmg: 18, rate: 150, speed: 9, price: 1200 },
+  rifle: { name: 'Vintovka', dmg: 30, rate: 250, speed: 10, price: 2700 },
+  shotgun: { name: 'Shotgan', dmg: 50, rate: 800, speed: 6, price: 1800 },
+  sniper: { name: 'Snayper', dmg: 80, rate: 1200, speed: 14, price: 4750 },
+  awp: { name: 'AWP', dmg: 100, rate: 1500, speed: 16, price: 4750 }
+};
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

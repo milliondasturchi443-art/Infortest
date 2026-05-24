@@ -1017,3 +1017,54 @@ body.font-large { font-size:18px; }
 #onlineCanvas { image-rendering:pixelated; }
 .map-option:hover { border-color:var(--primary) !important; background:rgba(45,109,168,0.08); }
 .map-selected { border-color:var(--primary) !important; background:rgba(45,109,168,0.15) !important; box-shadow:0 0 0 2px rgba(45,109,168,0.3); }
+
+/* ═══ CS2-Style Lobby ═══ */
+.lobby-container { max-width:520px; margin:0 auto; padding:16px; }
+.lobby-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; padding:16px; background:var(--card); border-radius:12px; border:2px solid var(--border); }
+.lobby-code-box { text-align:center; }
+.lobby-code-label { font-size:.65rem; color:var(--muted); font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+.lobby-code-value { font-size:1.8rem; font-weight:900; letter-spacing:6px; color:var(--primary); font-family:monospace; }
+.btn-copy { background:none; border:1px solid var(--border); color:var(--muted); font-size:.65rem; padding:3px 10px; border-radius:6px; cursor:pointer; margin-top:4px; }
+.btn-copy:hover { border-color:var(--primary); color:var(--primary); }
+.lobby-section-title { font-weight:800; font-size:.8rem; margin-bottom:8px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.lobby-player-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px; }
+.lobby-player-card { padding:12px; border-radius:10px; background:var(--card); border:2px solid var(--border); text-align:center; position:relative; transition:all .2s; }
+.lobby-player-card.lp-me { border-color:var(--primary); background:rgba(45,109,168,0.08); }
+.lobby-player-card.lp-bot { border-color:#f59e0b; background:rgba(245,158,11,0.06); }
+.lobby-player-card.lp-empty { border-style:dashed; opacity:.5; }
+.lp-avatar { font-size:1.5rem; margin-bottom:4px; }
+.lp-name { font-weight:700; font-size:.85rem; }
+.lp-grade { font-size:.7rem; color:var(--muted); }
+.lp-kick { position:absolute; top:4px; right:6px; background:none; border:none; color:#ef4444; cursor:pointer; font-size:.8rem; padding:2px; }
+.lobby-controls { background:var(--card); border-radius:10px; padding:12px; margin-bottom:12px; border:1px solid var(--border); }
+.lobby-ctrl-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.ctrl-label { font-weight:700; font-size:.75rem; min-width:50px; color:var(--muted); }
+.ctrl-btns { display:flex; gap:4px; flex-wrap:wrap; }
+.ctrl-btn { padding:5px 10px; border:2px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:.7rem; font-weight:600; cursor:pointer; transition:all .2s; }
+.ctrl-btn:hover { border-color:var(--primary); }
+.ctrl-btn.ctrl-active { border-color:var(--primary); background:var(--primary); color:#fff; }
+.lobby-actions { text-align:center; margin-bottom:16px; }
+.lobby-start-btn { font-size:1rem !important; padding:14px 40px !important; letter-spacing:1px; animation:pulse-glow 2s infinite; }
+@keyframes pulse-glow { 0%,100% { box-shadow:0 4px 15px rgba(6,214,160,0.3); } 50% { box-shadow:0 4px 25px rgba(6,214,160,0.6); } }
+.lobby-invite { background:var(--card); border-radius:10px; padding:12px; border:1px solid var(--border); }
+.btn-lg { font-size:1rem; padding:12px 32px; }
+
+/* ═══ Buy Menu (CS2) ═══ */
+.buy-menu-inner { background:rgba(20,20,40,0.95); border:2px solid rgba(255,255,255,0.15); border-radius:14px; padding:20px; min-width:300px; backdrop-filter:blur(8px); }
+.buy-title { text-align:center; font-weight:900; font-size:1rem; color:#fff; margin-bottom:12px; }
+.buy-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.buy-item { padding:10px 6px; border:2px solid rgba(255,255,255,0.12); border-radius:8px; text-align:center; cursor:pointer; transition:all .2s; }
+.buy-item:hover { border-color:#fbbf24; background:rgba(251,191,36,0.1); }
+.buy-item.buy-active { border-color:#22c55e; background:rgba(34,197,94,0.12); }
+.buy-item.buy-disabled { opacity:.4; cursor:not-allowed; }
+.buy-icon { font-size:1.4rem; }
+.buy-name { font-weight:700; font-size:.7rem; color:#fff; }
+.buy-price { font-size:.65rem; color:#fbbf24; }
+.buy-hint { text-align:center; font-size:.65rem; color:rgba(255,255,255,0.4); }
+
+@media(max-width:480px) {
+  .lobby-player-grid { grid-template-columns:1fr; }
+  .lobby-header { flex-direction:column; }
+  .buy-grid { grid-template-columns:repeat(2,1fr); }
+  .buy-menu-inner { min-width:260px; padding:14px; }
+}

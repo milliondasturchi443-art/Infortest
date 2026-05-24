@@ -411,9 +411,10 @@
             </div>
           </div>
           <div id="onlineMatchmaking" style="display:none"></div>
-          <div id="onlineGameArea" style="display:none">
+          <div id="onlineGameArea" style="display:none;position:relative">
             <canvas id="onlineCanvas" width="800" height="600" style="display:block;margin:0 auto;border:2px solid var(--border);border-radius:12px;background:#1a1a2e;touch-action:none;max-width:100%"></canvas>
-            <div id="onlineHUD" style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:.85rem;font-weight:600"></div>
+            <div id="buyMenu" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100"></div>
+            <div id="onlineHUD" style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:.85rem;font-weight:600;flex-wrap:wrap;gap:6px"></div>
             <div id="onlineMobileControls" style="display:none"></div>
           </div>
         </div>
