@@ -25,7 +25,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/socket.io')) return next();
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
