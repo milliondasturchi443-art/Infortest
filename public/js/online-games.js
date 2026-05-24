@@ -4,8 +4,8 @@ var onlineState = { inQueue: false, inGame: false, inLobby: false, lobbyCode: nu
 var onlineKeys = {};
 var onlineTouchAngle = null;
 var onlineTouchShoot = false;
-var onlineJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
-var onlineAimJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
+var onlineJoystick = { active: false, touchId: null, startX: 0, startY: 0, dx: 0, dy: 0 };
+var onlineAimJoystick = { active: false, touchId: null, startX: 0, startY: 0, dx: 0, dy: 0 };
 var onlineMyPos = { x: 400, y: 300 };
 var onlineInputInterval = null;
 var myWeapon = 'pistol';
@@ -248,7 +248,8 @@ function loadLobbyFriends(lobbyCode) {
       var html = '';
       friends.forEach(function (f) {
         html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:var(--bg);margin-bottom:3px">';
-        html += '<span style="font-weight:600;font-size:.8rem">' + f.name + ' <span style="color:var(--muted);font-size:.7rem">(' + (f.friendCode || '') + ')</span></span>';
+        html += '<span style="font-weight:600;font-size:.8rem">' + f.name + ' <span style="color:var(--muted);font-size:.7rem">' + (f.grade || '') + '</span></span>';
+        html += '<button class="btn btn-sm btn-primary" style="padding:3px 10px;font-size:.65rem" onclick="sendLobbyInvite(\'' + lobbyCode + '\',\'' + f.id + '\',\'' + f.name + '\')">📨 Taklif</button>';
         html += '</div>';
       });
       el.innerHTML = html;
@@ -260,6 +261,11 @@ function inviteFriendToLobby(code) {
   if (!friendCode) return;
   copyLobbyCode(code);
   alert('Lobby kodi nusxalandi: ' + code + '\nDo\'stingizga yuboring!');
+}
+
+function sendLobbyInvite(code, friendId, friendName) {
+  if (navigator.clipboard) navigator.clipboard.writeText(code);
+  alert(friendName + ' ga lobby kodi yuborildi: ' + code + '\nKod nusxalandi — do\'stingizga yuboring!');
 }
 
 function copyLobbyCode(code) {
@@ -493,21 +499,46 @@ function showMobileControls() {
 function setupJoystick(el, knobId, state) {
   var knob = document.getElementById(knobId);
   el.addEventListener('touchstart', function (e) {
-    e.preventDefault(); var t = e.touches[0]; var rect = el.getBoundingClientRect();
-    state.active = true; state.startX = rect.left + rect.width / 2; state.startY = rect.top + rect.height / 2;
-    state.dx = t.clientX - state.startX; state.dy = t.clientY - state.startY;
+    e.preventDefault();
+    var t = e.changedTouches[0];
+    state.touchId = t.identifier;
+    var rect = el.getBoundingClientRect();
+    state.active = true;
+    state.startX = rect.left + rect.width / 2;
+    state.startY = rect.top + rect.height / 2;
+    state.dx = t.clientX - state.startX;
+    state.dy = t.clientY - state.startY;
     updateKnob(knob, state, el);
   }, { passive: false });
   el.addEventListener('touchmove', function (e) {
-    e.preventDefault(); if (!state.active) return; var t = e.touches[0];
-    state.dx = t.clientX - state.startX; state.dy = t.clientY - state.startY;
+    e.preventDefault();
+    if (!state.active) return;
+    var t = findTouch(e.touches, state.touchId);
+    if (!t) return;
+    state.dx = t.clientX - state.startX;
+    state.dy = t.clientY - state.startY;
     var dist = Math.sqrt(state.dx * state.dx + state.dy * state.dy);
     if (dist > 50) { state.dx = state.dx / dist * 50; state.dy = state.dy / dist * 50; }
     updateKnob(knob, state, el);
   }, { passive: false });
   el.addEventListener('touchend', function (e) {
-    e.preventDefault(); state.active = false; state.dx = 0; state.dy = 0; updateKnob(knob, state, el);
+    e.preventDefault();
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === state.touchId) {
+        state.active = false; state.touchId = null; state.dx = 0; state.dy = 0;
+        updateKnob(knob, state, el);
+        break;
+      }
+    }
   }, { passive: false });
+  el.addEventListener('touchcancel', function (e) {
+    state.active = false; state.touchId = null; state.dx = 0; state.dy = 0;
+    updateKnob(knob, state, el);
+  }, { passive: false });
+}
+function findTouch(touches, id) {
+  for (var i = 0; i < touches.length; i++) { if (touches[i].identifier === id) return touches[i]; }
+  return null;
 }
 function updateKnob(knob, state, el) { var hw = el.clientWidth / 2 - 25; knob.style.left = (hw + state.dx) + 'px'; knob.style.top = (hw + state.dy) + 'px'; }
 
@@ -636,7 +667,7 @@ function drawBullets(ctx, bullets) {
   ctx.shadowBlur = 0;
 }
 
-// ═══ SHOOTER RENDERER (CS2 STYLE) ═══
+// ═══ SHOOTER RENDERER (CS2 AGENT STYLE) ═══
 function renderShooter(ctx, data, W, H) {
   var walls = data.state.items ? data.state.items.filter(function (i) { return i.type === 'wall'; }) : [];
   drawWalls(ctx, walls);
@@ -646,54 +677,88 @@ function renderShooter(ctx, data, W, H) {
     if (p.disconnected) return;
     var isMe = p.id === onlineState.myId;
     var color = getPlayerColor(i);
+    var dark = shadeColor(color, -40);
 
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle || 0);
 
-    // body shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath(); ctx.arc(2, 2, 15, 0, Math.PI * 2); ctx.fill();
+    // drop shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(1, 2, 13, 10, 0, 0, Math.PI * 2); ctx.fill();
 
-    // body
-    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
+    // legs (two small rects behind body)
+    ctx.fillStyle = dark;
+    ctx.fillRect(-3, -10, 5, 6);
+    ctx.fillRect(-3, 5, 5, 6);
 
-    // weapon indicator
+    // body (torso — slightly oval)
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(0, 0, 11, 13, 0, 0, Math.PI * 2); ctx.fill();
+
+    // shoulders
+    ctx.fillStyle = dark;
+    ctx.fillRect(-4, -14, 8, 4);
+    ctx.fillRect(-4, 10, 8, 4);
+
+    // vest/armor stripe
+    if (p.armor > 0) {
+      ctx.fillStyle = 'rgba(59,130,246,0.4)';
+      ctx.fillRect(-6, -6, 12, 12);
+    }
+
+    // head
+    ctx.fillStyle = isMe ? '#fbbf24' : '#e5cda8';
+    ctx.beginPath(); ctx.arc(7, 0, 5.5, 0, Math.PI * 2); ctx.fill();
+    // helmet
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.arc(7, 0, 5.5, -1.2, 1.2); ctx.fill();
+    // eye
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(10, -1, 1.5, 0, Math.PI * 2); ctx.fill();
+
+    // weapon
     var wepColors = { pistol: '#9ca3af', smg: '#60a5fa', rifle: '#34d399', shotgun: '#f59e0b', sniper: '#a78bfa' };
-    ctx.fillStyle = wepColors[p.weapon] || '#d1d5db';
-    ctx.fillRect(10, -3, 14, 6);
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(22, -1, 3, 2);
+    var wepLens = { pistol: 10, smg: 16, rifle: 22, shotgun: 14, sniper: 28 };
+    var wLen = wepLens[p.weapon] || 12;
+    ctx.fillStyle = wepColors[p.weapon] || '#9ca3af';
+    ctx.fillRect(8, -2.5, wLen, 5);
+    // muzzle
+    ctx.fillStyle = '#555';
+    ctx.fillRect(8 + wLen - 3, -1.5, 4, 3);
 
-    // visor
-    ctx.fillStyle = isMe ? '#fbbf24' : '#e5e7eb';
-    ctx.beginPath(); ctx.arc(5, 0, 4, 0, Math.PI * 2); ctx.fill();
+    // hand holding weapon
+    ctx.fillStyle = '#e5cda8';
+    ctx.beginPath(); ctx.arc(8, 3, 3, 0, Math.PI * 2); ctx.fill();
 
     ctx.restore();
 
     drawHP(ctx, p.x, p.y, p.hp, 100, p.armor);
-    drawName(ctx, p.x, p.y, (p.isBot ? '🤖 ' : '') + (p.name || 'Player'), isMe);
+    drawName(ctx, p.x, p.y, (p.isBot ? '🤖 ' : '') + (p.name || 'Agent'), isMe);
 
     if (isMe) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(p.x, p.y, 24, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
   });
 
-  // crosshair for my player
+  // crosshair
   var me = data.players.find(function (p) { return p.id === onlineState.myId; });
-  if (me && !isMobile()) {
-    var cx = me.x + Math.cos(me.angle || 0) * 50;
-    var cy = me.y + Math.sin(me.angle || 0) * 50;
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8); ctx.stroke();
+  if (me) {
+    var cx = me.x + Math.cos(me.angle || 0) * 55;
+    var cy = me.y + Math.sin(me.angle || 0) * 55;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx - 3, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 3, cy); ctx.lineTo(cx + 8, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy - 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy + 3); ctx.lineTo(cx, cy + 8); ctx.stroke();
+    // center dot
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.beginPath(); ctx.arc(cx, cy, 1, 0, Math.PI * 2); ctx.fill();
   }
 }
 
-// ═══ TANKS RENDERER ═══
+// ═══ TANKS RENDERER (DETAILED) ═══
 function renderTanks(ctx, data, W, H) {
   drawWalls(ctx, data.state.walls || []);
   drawBullets(ctx, data.state.bullets || []);
@@ -701,22 +766,79 @@ function renderTanks(ctx, data, W, H) {
     if (p.disconnected) return;
     var isMe = p.id === onlineState.myId;
     var color = getPlayerColor(p.team != null ? p.team : i);
-    ctx.save(); ctx.translate(p.x, p.y);
+    var dark = shadeColor(color, -40);
+    var light = shadeColor(color, 30);
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+
     // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.save(); ctx.rotate(p.angle || 0); ctx.fillRect(-14, -10, 32, 24); ctx.restore();
-    var bodyAngle = p.angle || 0;
-    ctx.save(); ctx.rotate(bodyAngle);
-    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8;
-    ctx.fillRect(-16, -12, 32, 24); ctx.shadowBlur = 0;
-    ctx.fillStyle = shadeColor(color, -30);
-    ctx.fillRect(-18, -14, 6, 28); ctx.fillRect(12, -14, 6, 28);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.save(); ctx.rotate(p.angle || 0);
+    ctx.fillRect(-14, -10, 32, 24);
     ctx.restore();
+
+    // body
+    var bodyAngle = p.angle || 0;
+    ctx.save();
+    ctx.rotate(bodyAngle);
+
+    // tracks (left + right)
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-19, -15, 7, 30);
+    ctx.fillRect(12, -15, 7, 30);
+    // track details (grooves)
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 1;
+    for (var ti = -12; ti <= 12; ti += 6) {
+      ctx.beginPath(); ctx.moveTo(-19, ti); ctx.lineTo(-12, ti); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(12, ti); ctx.lineTo(19, ti); ctx.stroke();
+    }
+
+    // hull
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-12, -12); ctx.lineTo(14, -10); ctx.lineTo(16, 0); ctx.lineTo(14, 10); ctx.lineTo(-12, 12); ctx.lineTo(-14, 0);
+    ctx.closePath(); ctx.fill();
+
+    // hull detail — front plate
+    ctx.fillStyle = dark;
+    ctx.fillRect(10, -8, 4, 16);
+
+    // exhaust pipes (back)
+    ctx.fillStyle = '#444';
+    ctx.fillRect(-14, -8, 3, 4);
+    ctx.fillRect(-14, 4, 3, 4);
+
+    // hull stripe
+    ctx.fillStyle = light;
+    ctx.fillRect(-8, -2, 16, 4);
+
+    ctx.restore();
+
+    // turret
     var tAngle = p.turretAngle || bodyAngle;
-    ctx.save(); ctx.rotate(tAngle);
-    ctx.fillStyle = shadeColor(color, 20);
-    ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#d1d5db'; ctx.fillRect(6, -2.5, 18, 5);
-    ctx.restore(); ctx.restore();
+    ctx.save();
+    ctx.rotate(tAngle);
+
+    // turret base
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = light;
+    ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+
+    // barrel
+    ctx.fillStyle = '#bbb';
+    ctx.fillRect(6, -3, 20, 6);
+    // barrel tip
+    ctx.fillStyle = '#888';
+    ctx.fillRect(23, -4, 4, 8);
+    // barrel detail
+    ctx.fillStyle = '#999';
+    ctx.fillRect(14, -2, 2, 4);
+
+    ctx.restore();
+    ctx.restore();
+
     drawHP(ctx, p.x, p.y, p.hp, 100, 0);
     drawName(ctx, p.x, p.y, (p.isBot ? '🤖 ' : '') + (p.name || 'Tank'), isMe);
   });
