@@ -103,13 +103,50 @@ io.on('connection', (socket) => {
   });
 });
 
+function rectOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+function isInWall(x, y, r, walls) {
+  for (const w of walls) {
+    if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
+  }
+  return false;
+}
+
+function safeSpawn(W, H, walls, margin) {
+  margin = margin || 25;
+  for (let tries = 0; tries < 50; tries++) {
+    const x = margin + Math.random() * (W - margin * 2);
+    const y = margin + Math.random() * (H - margin * 2);
+    if (!isInWall(x, y, 20, walls)) return { x, y };
+  }
+  return { x: W / 2, y: H / 2 };
+}
+
+function generateWalls(count, W, H, spawnZones) {
+  const walls = [];
+  for (let i = 0; i < count; i++) {
+    for (let tries = 0; tries < 20; tries++) {
+      const w = { x: 120 + Math.random() * (W - 240), y: 80 + Math.random() * (H - 160), w: 30 + Math.random() * 50, h: 30 + Math.random() * 50 };
+      let overlapsSpawn = false;
+      for (const sz of spawnZones) {
+        if (rectOverlap(w.x - 30, w.y - 30, w.w + 60, w.h + 60, sz.x - 40, sz.y - 40, 80, 80)) { overlapsSpawn = true; break; }
+      }
+      if (!overlapsSpawn) { walls.push(w); break; }
+    }
+  }
+  return walls;
+}
+
 function initGameState(room) {
   const W = 800, H = 600;
   if (room.gameType === 'shooter') {
+    const spawnPositions = [{ x: 100, y: H / 2 }, { x: W - 100, y: H / 2 }];
     room.state = { w: W, h: H, bullets: [], items: [], time: 90 };
     room.players.forEach((p, i) => {
-      p.x = i === 0 ? 100 : W - 100;
-      p.y = H / 2;
+      const pos = spawnPositions[i] || spawnPositions[0];
+      p.x = pos.x; p.y = pos.y;
       p.hp = 100;
       p.angle = i === 0 ? 0 : Math.PI;
       p.speed = 3;
@@ -118,21 +155,18 @@ function initGameState(room) {
       p.weapon = 'pistol';
       p.input = {};
     });
-    for (let i = 0; i < 8; i++) {
-      room.state.items.push({ type: 'wall', x: 100 + Math.random() * (W - 200), y: 100 + Math.random() * (H - 200), w: 20 + Math.random() * 60, h: 20 + Math.random() * 60 });
-    }
+    const walls = generateWalls(8, W, H, spawnPositions);
+    walls.forEach(w => room.state.items.push({ type: 'wall', ...w }));
   } else if (room.gameType === 'tanks') {
+    const spawnPositions = [{ x: 80, y: 80 }, { x: W - 80, y: H - 80 }, { x: W - 80, y: 80 }, { x: 80, y: H - 80 }];
     room.state = { w: W, h: H, bullets: [], walls: [], time: 120 };
     room.players.forEach((p, i) => {
-      const positions = [{x:80,y:80},{x:W-80,y:H-80},{x:W-80,y:80},{x:80,y:H-80}];
-      const pos = positions[i] || positions[0];
+      const pos = spawnPositions[i] || spawnPositions[0];
       p.x = pos.x; p.y = pos.y;
       p.hp = 100; p.angle = 0; p.turretAngle = 0;
-      p.speed = 2; p.score = 0; p.lastShot = 0; p.input = {};
+      p.speed = 2.5; p.score = 0; p.lastShot = 0; p.input = {};
     });
-    for (let i = 0; i < 12; i++) {
-      room.state.walls.push({ x: 60 + Math.random() * (W - 120), y: 60 + Math.random() * (H - 120), w: 30 + Math.random() * 50, h: 30 + Math.random() * 50 });
-    }
+    room.state.walls = generateWalls(10, W, H, spawnPositions);
   } else if (room.gameType === 'arena') {
     room.state = { w: W, h: H, projectiles: [], time: 90 };
     room.players.forEach((p, i) => {
@@ -175,30 +209,43 @@ function startGameLoop(roomId) {
   }, 1000 / 30);
 }
 
+function getWalls(room) {
+  if (room.state.walls) return room.state.walls;
+  if (room.state.items) return room.state.items.filter(i => i.type === 'wall');
+  return [];
+}
+
+function collidesWall(x, y, r, walls) {
+  for (const w of walls) {
+    if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
+  }
+  return false;
+}
+
 function updateGame(room, dt) {
   const W = room.state.w, H = room.state.h;
-  const spd = dt * 60;
+  const cdt = Math.min(dt, 0.05);
+  const walls = getWalls(room);
+  const R = 15;
 
   room.players.forEach(p => {
     if (p.disconnected || p.hp <= 0) return;
     const inp = p.input || {};
     let dx = 0, dy = 0;
-    if (inp.up) dy -= p.speed * spd;
-    if (inp.down) dy += p.speed * spd;
-    if (inp.left) dx -= p.speed * spd;
-    if (inp.right) dx += p.speed * spd;
+    if (inp.up) dy -= 1;
+    if (inp.down) dy += 1;
+    if (inp.left) dx -= 1;
+    if (inp.right) dx += 1;
     if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+    dx *= p.speed * cdt * 60;
+    dy *= p.speed * cdt * 60;
 
-    let nx = p.x + dx, ny = p.y + dy;
-    nx = Math.max(15, Math.min(W - 15, nx));
-    ny = Math.max(15, Math.min(H - 15, ny));
+    // axis-separated collision
+    let nx = Math.max(R, Math.min(W - R, p.x + dx));
+    if (!collidesWall(nx, p.y, R, walls)) { p.x = nx; }
 
-    const walls = room.state.walls || room.state.items?.filter(i => i.type === 'wall') || [];
-    let blocked = false;
-    walls.forEach(w => {
-      if (nx > w.x - 15 && nx < w.x + w.w + 15 && ny > w.y - 15 && ny < w.y + w.h + 15) blocked = true;
-    });
-    if (!blocked) { p.x = nx; p.y = ny; }
+    let ny = Math.max(R, Math.min(H - R, p.y + dy));
+    if (!collidesWall(p.x, ny, R, walls)) { p.y = ny; }
 
     if (inp.angle !== undefined) p.angle = inp.angle;
     if (inp.turretAngle !== undefined) p.turretAngle = inp.turretAngle;
@@ -206,13 +253,13 @@ function updateGame(room, dt) {
     if (room.gameType === 'shooter' || room.gameType === 'tanks') {
       if (inp.shoot && Date.now() - p.lastShot > 300) {
         p.lastShot = Date.now();
-        const a = room.gameType === 'tanks' ? (p.turretAngle || p.angle) : p.angle;
+        const a = room.gameType === 'tanks' ? (p.turretAngle != null ? p.turretAngle : p.angle) : p.angle;
         const bSpeed = room.gameType === 'tanks' ? 7 : 8;
         room.state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * bSpeed, vy: Math.sin(a) * bSpeed, owner: p.id, dmg: room.gameType === 'tanks' ? 25 : 15, life: 80 });
       }
     }
     if (room.gameType === 'arena') {
-      if (p.attackCooldown > 0) p.attackCooldown = Math.max(0, p.attackCooldown - dt);
+      if (p.attackCooldown > 0) p.attackCooldown = Math.max(0, p.attackCooldown - cdt);
       if (inp.attack && p.attackCooldown <= 0) {
         p.attackCooldown = 0.6;
         p.lastAttack = Date.now();
@@ -221,19 +268,17 @@ function updateGame(room, dt) {
     }
   });
 
-  const bullets = room.state.bullets || room.state.projectiles || [];
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    const b = bullets[i];
-    b.x += b.vx * spd; b.y += b.vy * spd; b.life--;
-    if (b.life <= 0 || b.x < 0 || b.x > W || b.y < 0 || b.y > H) { bullets.splice(i, 1); continue; }
+  // update bullets
+  const bulletList = room.state.bullets || [];
+  for (let i = bulletList.length - 1; i >= 0; i--) {
+    const b = bulletList[i];
+    b.x += b.vx; b.y += b.vy; b.life--;
+    if (b.life <= 0 || b.x < 0 || b.x > W || b.y < 0 || b.y > H) { bulletList.splice(i, 1); continue; }
+    if (collidesWall(b.x, b.y, 2, walls)) { bulletList.splice(i, 1); continue; }
 
-    const walls = room.state.walls || room.state.items?.filter(it => it.type === 'wall') || [];
-    let hitWall = false;
-    walls.forEach(w => { if (b.x > w.x && b.x < w.x + w.w && b.y > w.y && b.y < w.y + w.h) hitWall = true; });
-    if (hitWall) { bullets.splice(i, 1); continue; }
-
+    let hit = false;
     room.players.forEach(p => {
-      if (p.id === b.owner || p.hp <= 0 || p.disconnected) return;
+      if (hit || p.id === b.owner || p.hp <= 0 || p.disconnected) return;
       if (room.mode === '2v2') {
         const owner = room.players.find(pl => pl.id === b.owner);
         if (owner && owner.team === p.team) return;
@@ -241,7 +286,7 @@ function updateGame(room, dt) {
       const dist = Math.sqrt((b.x - p.x) ** 2 + (b.y - p.y) ** 2);
       if (dist < 18) {
         p.hp -= b.dmg;
-        b.life = 0;
+        hit = true;
         if (p.hp <= 0) {
           p.hp = 0;
           const shooter = room.players.find(pl => pl.id === b.owner);
@@ -250,15 +295,42 @@ function updateGame(room, dt) {
         }
       }
     });
-    if (b.life <= 0) bullets.splice(i, 1);
+    if (hit) bulletList.splice(i, 1);
+  }
+
+  // update projectiles (arena)
+  const projList = room.state.projectiles || [];
+  for (let i = projList.length - 1; i >= 0; i--) {
+    const b = projList[i];
+    b.x += b.vx; b.y += b.vy; b.life--;
+    if (b.life <= 0 || b.x < 0 || b.x > W || b.y < 0 || b.y > H) { projList.splice(i, 1); continue; }
+
+    let hit = false;
+    room.players.forEach(p => {
+      if (hit || p.id === b.owner || p.hp <= 0 || p.disconnected) return;
+      const dist = Math.sqrt((b.x - p.x) ** 2 + (b.y - p.y) ** 2);
+      if (dist < 18) {
+        p.hp -= b.dmg;
+        hit = true;
+        if (p.hp <= 0) {
+          p.hp = 0;
+          const attacker = room.players.find(pl => pl.id === b.owner);
+          if (attacker) attacker.score++;
+          setTimeout(() => { respawnPlayer(room, p); }, 2000);
+        }
+      }
+    });
+    if (hit) projList.splice(i, 1);
   }
 }
 
 function respawnPlayer(room, p) {
   const W = room.state.w, H = room.state.h;
+  const walls = getWalls(room);
+  const pos = safeSpawn(W, H, walls, 40);
   p.hp = 100;
-  p.x = 50 + Math.random() * (W - 100);
-  p.y = 50 + Math.random() * (H - 100);
+  p.x = pos.x;
+  p.y = pos.y;
 }
 
 function endGame(roomId) {

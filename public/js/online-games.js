@@ -6,6 +6,8 @@ var onlineTouchAngle = null;
 var onlineTouchShoot = false;
 var onlineJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
 var onlineAimJoystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
+var onlineMyPos = { x: 400, y: 300 };
+var onlineInputInterval = null;
 
 function getSocket() {
   if (!socket || !socket.connected) {
@@ -93,6 +95,7 @@ function backToOnlineLobby() {
   onlineState.inGame = false;
   onlineState.inQueue = false;
   onlineState.roomId = null;
+  if (onlineInputInterval) { clearInterval(onlineInputInterval); onlineInputInterval = null; }
   document.getElementById('onlineLobby').style.display = 'block';
   document.getElementById('onlineMatchmaking').style.display = 'none';
   document.getElementById('onlineGameArea').style.display = 'none';
@@ -100,6 +103,8 @@ function backToOnlineLobby() {
   document.removeEventListener('keydown', onlineKeyDown);
   document.removeEventListener('keyup', onlineKeyUp);
   onlineKeys = {};
+  onlineTouchShoot = false;
+  onlineTouchAngle = null;
 }
 
 // ═══ GAME START ═══
@@ -152,13 +157,14 @@ function setupOnlineControls(canvas) {
     var scaleY = 600 / rect.height;
     var mx = (e.clientX - rect.left) * scaleX;
     var my = (e.clientY - rect.top) * scaleY;
-    onlineTouchAngle = Math.atan2(my - 300, mx - 400);
+    onlineTouchAngle = Math.atan2(my - onlineMyPos.y, mx - onlineMyPos.x);
   });
 
   canvas.addEventListener('mousedown', function () { onlineTouchShoot = true; });
   canvas.addEventListener('mouseup', function () { onlineTouchShoot = false; });
 
-  setInterval(sendOnlineInput, 1000 / 30);
+  if (onlineInputInterval) clearInterval(onlineInputInterval);
+  onlineInputInterval = setInterval(sendOnlineInput, 1000 / 30);
 }
 
 function showMobileControls() {
@@ -270,6 +276,11 @@ function renderOnlineGame(data) {
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
   var W = 800, H = 600;
+
+  // track own position for mouse aim
+  data.players.forEach(function (p) {
+    if (p.id === onlineState.myId) { onlineMyPos.x = p.x; onlineMyPos.y = p.y; }
+  });
 
   ctx.fillStyle = GAME_COLORS.bg;
   ctx.fillRect(0, 0, W, H);
