@@ -152,6 +152,7 @@
         <div class="nav-item" data-tab="settings" onclick="showDashTab('settings',this)"><span class="nav-icon">🎨</span> Sozlamalar</div>
         <div class="nav-item" data-tab="achievements" onclick="showDashTab('achievements',this)"><span class="nav-icon">🏆</span> Yutuqlar</div>
         <div class="nav-item" data-tab="games" onclick="showDashTab('games',this)"><span class="nav-icon">🎮</span> Mini o'yinlar</div>
+        <div class="nav-item" data-tab="online" onclick="showDashTab('online',this)"><span class="nav-icon">🌐</span> Online o'yinlar</div>
         <div class="nav-divider"></div>
         <div class="nav-item" id="adminTab" style="display:none" data-tab="admin" onclick="showDashTab('admin',this)"><span class="nav-icon">⚙️</span> Admin</div>
       </nav>
@@ -370,6 +371,44 @@
           </div>
           <div id="gameArea" style="display:none"></div>
         </div>
+        <div id="tab-online" class="dash-tab">
+          <h2 class="section-title">🌐 Online o'yinlar</h2>
+          <p class="section-desc">Boshqa o'quvchilar bilan real vaqtda o'ynang!</p>
+          <div id="onlineLobby">
+            <div class="games-grid" id="onlineGamesList">
+              <div class="game-card online-card" onclick="openOnlineGame('shooter','1v1')">
+                <span class="game-icon">🔫</span>
+                <div class="game-name">2D Shooter</div>
+                <div class="game-desc">1v1 — Otishma jangi</div>
+                <span class="online-badge">1v1</span>
+              </div>
+              <div class="game-card online-card" onclick="openOnlineGame('tanks','1v1')">
+                <span class="game-icon">🔵</span>
+                <div class="game-name">2D Tanklar</div>
+                <div class="game-desc">1v1 — Tank jangi</div>
+                <span class="online-badge">1v1</span>
+              </div>
+              <div class="game-card online-card" onclick="openOnlineGame('tanks','2v2')">
+                <span class="game-icon">🔵</span>
+                <div class="game-name">2D Tanklar</div>
+                <div class="game-desc">2v2 — Jamoa jangi</div>
+                <span class="online-badge">2v2</span>
+              </div>
+              <div class="game-card online-card" onclick="openOnlineGame('arena','1v1')">
+                <span class="game-icon">⚔️</span>
+                <div class="game-name">2D Arena</div>
+                <div class="game-desc">1v1 — Yaqin jang</div>
+                <span class="online-badge">1v1</span>
+              </div>
+            </div>
+          </div>
+          <div id="onlineMatchmaking" style="display:none"></div>
+          <div id="onlineGameArea" style="display:none">
+            <canvas id="onlineCanvas" width="800" height="600" style="display:block;margin:0 auto;border:2px solid var(--border);border-radius:12px;background:#1a1a2e;touch-action:none;max-width:100%"></canvas>
+            <div id="onlineHUD" style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:.85rem;font-weight:600"></div>
+            <div id="onlineMobileControls" style="display:none"></div>
+          </div>
+        </div>
         <div id="tab-admin" class="dash-tab">
           <h2 class="section-title">Admin panel</h2>
           <p class="section-desc">Tizim boshqaruvi</p>
@@ -481,6 +520,8 @@
 </div>
 
 <canvas id="certCanvas"></canvas>
+<script src="/socket.io/socket.io.js"></script>
 <script src="/js/app.js"></script>
+<script src="/js/online-games.js"></script>
 </body>
 </html>

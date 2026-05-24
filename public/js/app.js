@@ -240,6 +240,7 @@ var TAB_TITLES = {
   achievements: '\uD83C\uDFC6 Yutuqlar',
   daily: '\uD83C\uDF1F Kunlik vazifa',
   games: '\uD83C\uDFAE Mini o\'yinlar',
+  online: '\uD83C\uDF10 Online o\'yinlar',
   admin: '\u2699\uFE0F Admin',
 };
 

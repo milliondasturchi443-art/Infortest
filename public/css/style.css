@@ -1007,3 +1007,11 @@ body.font-large { font-size:18px; }
   .lb-table th { padding:6px 4px; font-size:.6rem; }
   .lb-row td { padding:8px 4px; font-size:.72rem; }
 }
+
+/* ═══ Online Games ═══ */
+.online-card { position:relative; overflow:visible; }
+.online-badge { position:absolute; top:-8px; right:-8px; background:linear-gradient(135deg,#ef4444,#f97316); color:#fff; font-size:.65rem; font-weight:800; padding:3px 8px; border-radius:20px; letter-spacing:.5px; box-shadow:0 2px 8px rgba(239,68,68,0.4); }
+.matchmaking-spinner { width:60px; height:60px; border:4px solid var(--border); border-top:4px solid var(--primary); border-radius:50%; margin:0 auto 16px; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+#onlineMobileControls { background:rgba(0,0,0,0.3); border-radius:var(--radius) var(--radius) 0 0; padding:8px; }
+#onlineCanvas { image-rendering:pixelated; }
