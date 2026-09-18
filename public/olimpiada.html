@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Olimpyoda testlar — InforTest</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;background:#f3f6fb;color:#172033}.wrap{max-width:900px;margin:auto;padding:24px}.card{background:#fff;border-radius:18px;padding:24px;margin:14px 0;box-shadow:0 8px 28px #17335d18}h1{color:#2459a6}.grades{display:flex;gap:10px;flex-wrap:wrap}.grades button,.submit{border:0;border-radius:10px;padding:12px 18px;background:#2459a6;color:#fff;cursor:pointer;font-weight:700}.grades button.active{background:#e56b24}.question{padding:16px 0;border-bottom:1px solid #e6eaf0}.option{display:block;padding:9px;margin:6px 0;border:1px solid #dce3ed;border-radius:9px;cursor:pointer}.option:hover{background:#eef5ff}.result{font-size:1.2rem;font-weight:700}.muted{color:#64748b}
+</style></head>
+<body><main class="wrap"><div class="card"><h1>🏆 Olimpyoda testlar</h1><p class="muted">Informatika fanidan 9–11-sinf olimpiada testlari</p><div class="grades"><button data-grade="9">9-sinf</button><button data-grade="10">10-sinf</button><button data-grade="11">11-sinf</button></div></div><div id="app"></div></main>
+<script>
+const tests={
+9:[
+['“Logika” so‘zi qaysi tildan olingan va nimani anglatadi?',['Yunoncha — ma’lumot','Lotincha — mulohaza, fikr','Yunoncha — nutq, aql','Lotincha — mantiq, aql'],2],
+['“<=>” belgisi nimani anglatadi?',['Bir vaqtda rost va yolg‘on','Bir vaqtda rost yoki bir vaqtda yolg‘on','A katta B dan','Xatolik'],2],
+['O‘zak dastur nima deb ataladi?',['Dasturiy o‘zak','Kontent','Web-sayt','Platforma'],4],
+['Ijtimoiy media marketingni yurituvchi shaxs kim?',['Media tarqatuvchi','SMM mutaxassisi','Youtuber','Blogger'],2],
+['Logotip — bu …',['Maqsadni ifodalovchi so‘z','Maqsadni ifodalovchi tasvir','Shior','Bitmapped tasvir'],2],
+['CMS kengaytmasi qanday?',['Content management system','Content manager system','Clip making secretary','Computer media system'],1],
+['CMS platformalarining guruhlari qaysi?',['Ochiq va yopiq kodli','Tekin va pulli','Ochiq va yarim-ochiq','Faqat ochiq'],1],
+['Joomla platformasining domeni qanday?',['uz','com','org','edu'],3],
+['DEMO versiya bu — …',['Asl nusxa','Buzilgan variant','Pulsiz variant','Belgilangan vaqt ishlaydigan nusxa'],4],
+['“Obyekt” so‘zi qaysi tildan olingan?',['Lotin','Yunon','Italyan','Ingliz'],1],
+['Dasturlash tili — bu …',['Faqat kompyuter tili','Web sayt tili','Dasturchilar rasmiy tili','Inson va kompyuter o‘rtasidagi rasmiy aloqa tili'],4],
+['IDE nimaning qisqartmasi?',['Ideal Documentation Environment','Integrated Development Environment','Internet Domain extension','Internal Development Environment'],2],
+['Qanday translyatorlar mavjud?',['Assembler va interpretator','Kompilyator va assembler','Kompilyator va interpretator','Assembler va Python'],3],
+['Dasturlash tillariga misol qaysi?',['PHP va Scratch','HTML va Python','Wordpress va C++','To‘g‘ri javob yo‘q'],1],
+['PHP nimaga ixtisoslashgan?',['Dinamik web-sahifalar','Interfaol web-saytlar','Sun’iy intellekt','Mobil dasturlar'],1],
+['Python’da print() nima?',['O‘zgaruvchi','Operator','Chiquvchi ma’lumot','Qo‘lda funksiya'],2],
+['NameError nimani anglatadi?',['So‘zni taniy olmayapti','Interfaol muhit xatosi','Xotira xatosi','Mantiqiy xato'],1],
+['Qiymat turini qaysi funksiya aniqlaydi?',['type()','name()','value()','print()'],1],
+['Chiziqli algoritm nima?',['Bir qator kod','O‘zgaruvchan ketma-ketlik','Istalgan tartib','Qat’iy ketma-ketlik'],4],
+['Shart operatori qaysi?',['IF','SWICH','CASE','IF THIS'],1]
+],
+10:[
+['Informatika faniga qachon asos solingan?',['XX asrning 40-yillarida','XX asrning 60-yillarida','XX asrning 50-yillarida','XX asrning 70-yillarida'],2],
+['Shifrlash usullarini o‘rganuvchi yo‘nalish?',['Kriptografiya','Kriptovalyuta','Kibernetika','Informatika'],1],
+['ASCII kengaytmasi qaysi?',['American Standard Code for International Interchange','American Standard Code for Information Internet','American Standard Code for International Internet','American Standard Code for Information Interchange'],4],
+['Skanerlarning nechta turi mavjud?',['2','1','3','4'],1],
+['Qat’iy probel tugmalari?',['Ctrl+Shift+probel','Ctrl+Alt+probel','Ctrl+probel','Shift+probel'],1],
+['Uzun tire tugmalari?',['Ctrl+Shift+-','Ctrl+Alt+-','Ctrl+-','Shift+-'],1],
+['Word’da abzasni belgilash uchun?',['1 marta chap tugma','2 marta chap tugma','3 marta chap tugma','1 marta o‘ng tugma'],3],
+['Sodda animatsion rasm kengaytmasi?',['GIF','JPG','BMP','PNG'],1],
+['1 dyum necha punkt?',['72','12','30','25'],1],
+['10–15-betlarni chop etish yozuvi?',['10..15','10, 15','10-15','10...15'],3],
+['print(3 in [1,2,3,4,5]) natijasi?',['False','True','Xatolik','1'],2],
+['Python’da funksiyani e’lon qilish kaliti?',['class','def','function','fun'],2],
+['Excel B4:C6 bloki nechta katak?',['4','6','9','10'],2],
+['Interfaol web-saytlar uchun til?',['C','PHP','Python','Javascript'],4],
+['Operatsion tizimlar uchun til?',['C','PHP','Python','Javascript'],1],
+['Dinamik web-saytlar uchun til?',['C','PHP','Javascript','Java'],2],
+['C4:D6 bloki nechta katak?',['4','6','8','10'],2],
+['5 ga qoldiqsiz bo‘linadigan qator?',['123454321₆, 11223344₆','23452345₆, 141414141₆','123123123₆, 11223344₆','123454321₆, 141414141₆'],4],
+['for i in [1,2,3,4][::-1] natijasi?',['1-2-3-4-','4-3-2-1-','4-1-2-3-','3-2-1-4-'],2],
+['print([1,2]*3) natijasi?',['[1, 2, 1, 2, 1, 2]','[1, 2, 3]','6','Xatolik'],1]
+],
+11:[
+['IDE so‘zining kengaytmasi?',['Integrated Drive Electronics','Investigational Device Exemption','Integrated Development Environment','International Driving Examination'],3],
+['Python’da funksiya e’lon qilish kaliti?',['class','def','function','fun'],2],
+['Murakkab mulohaza nima?',['Sodda amallar ustida hosil qilingan mulohaza','Aralash mulohaza','Qiyin mulohaza','Oddiy jumla'],1],
+['Python’da internet orqali kompyuterlarni bog‘lovchi modul?',['socket','turtle','math','tkinter'],1],
+['Ekranda chiziq va figuralar chizuvchi modul?',['socket','turtle','math','tkinter'],2],
+['Satrning a dan b gacha qismini olish?',['s[a][b]','s[a,b]','s[a..b]','s[a:b]'],4],
+['Telefon tarmog‘iga ulovchi qurilma?',['printer','hub','modem','switch'],3],
+['B4:C6 bloki nechta katak?',['4','6','9','10'],2],
+['Interfaol web-saytlar uchun asosan qaysi til?',['C','PHP','Python','Javascript'],4],
+['Operatsion tizimlar yozish tili?',['C','PHP','Python','Javascript'],1],
+['Dinamik web-saytlar tili?',['C','PHP','Javascript','Java'],2],
+['Noto‘g‘ri murojaat qilinganda Excel xatosi?',['#ПУСТО!','#ССЫЛКА!','#########','#ИМЯ?'],2],
+['5 ga bo‘linadigan qator?',['123454321₆, 11223344₆','23452345₆, 141414141₆','123123123₆, 11223344₆','123454321₆, 141414141₆'],4],
+['A and B or not B and C ifodasida nechta 1 bo‘ladi?',['4','3','5','6'],1],
+['print([1,2]*3) natijasi?',['[1, 2, 1, 2, 1, 2]','[1, 2, 3]','6','Xatolik'],1],
+['Python’da qoldiq operatori?',['/','//','%','**'],3],
+['Python’da mantiqiy VA operatori?',['or','and','not','in'],2],
+['Python’da ro‘yxat uzunligi funksiyasi?',['size()','count()','len()','length()'],3],
+['GIF nimaning kengaytmasi?',['Graphics Interchange Format','General Image File','Graphical Internet File','Graphic Input Format'],1],
+['Algoritmning qat’iy ketma-ket turi?',['Tarmoqlanuvchi','Takrorlanuvchi','Chiziqli','Tasodifiy'],3]
+]};
+let grade=9;function render(){const app=document.getElementById('app');app.innerHTML='<div class="card"><h2>'+grade+'-sinf Olimpyoda testi</h2><form id="quiz">'+tests[grade].map((x,i)=>'<div class="question"><b>'+ (i+1)+'. '+x[0]+'</b>'+x[1].map((o,j)=>'<label class="option"><input required type="radio" name="q'+i+'" value="'+j+'"> '+String.fromCharCode(65+j)+') '+o+'</label>').join('')+'</div>').join('')+'<button class="submit">Natijani ko‘rish</button></form><div id="result"></div></div>';document.getElementById('quiz').onsubmit=e=>{e.preventDefault();let n=0;tests[grade].forEach((x,i)=>{if(+new FormData(e.target).get('q'+i)===x[2])n++});document.getElementById('result').className='result';document.getElementById('result').textContent='Natija: '+n+'/'+tests[grade].length+' ('+Math.round(n/tests[grade].length*100)+'%)';window.scrollTo(0,document.body.scrollHeight)}}document.querySelectorAll('.grades button').forEach(b=>b.onclick=()=>{grade=+b.dataset.grade;document.querySelectorAll('.grades button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()});document.querySelector('[data-grade="9"]').classList.add('active');render();
+</script></body></html>
