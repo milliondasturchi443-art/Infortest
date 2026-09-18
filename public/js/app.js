@@ -20,6 +20,7 @@ var SUBJECT_NAMES = {
   matematika: 'Matematika',
   fizika: 'Fizika',
   kimyo: 'Kimyo',
+  'informatika-olimpiyada': 'Informatika Olimpiyada',
 };
 
 var SUBJECT_ICONS = {
@@ -27,6 +28,7 @@ var SUBJECT_ICONS = {
   matematika: '📐',
   fizika: '🔬',
   kimyo: '🧪',
+  'informatika-olimpiyada': '🏆',
 };
 
 var ACCENT_COLORS = [
@@ -297,6 +299,7 @@ async function updateSubjectCards() {
 
     var subjects = [
       { key: 'informatika', icon: '\uD83D\uDCBB', color: '#4361ee' },
+      { key: 'informatika-olimpiyada', icon: '\uD83C\uDFC6', color: '#f8961e' },
       { key: 'matematika', icon: '\uD83D\uDCD0', color: '#7209b7' },
       { key: 'fizika', icon: '\uD83D\uDD2C', color: '#f72585' },
       { key: 'kimyo', icon: '\uD83E\uDDEA', color: '#06d6a0' },
@@ -727,11 +730,11 @@ async function loadLeaderboard() {
       return;
     }
 
-    var subjectNames = {informatika:'Inf',matematika:'Mat',fizika:'Fiz',kimyo:'Kim'};
-    var subjectIcons = {informatika:'\uD83D\uDCBB',matematika:'\uD83D\uDCD0',fizika:'\uD83D\uDD2C',kimyo:'\uD83E\uDDEA'};
+    var subjectNames = {informatika:'Inf',matematika:'Mat',fizika:'Fiz',kimyo:'Kim','informatika-olimpiyada':'Olimp'};
+    var subjectIcons = {informatika:'\uD83D\uDCBB',matematika:'\uD83D\uDCD0',fizika:'\uD83D\uDD2C',kimyo:'\uD83E\uDDEA','informatika-olimpiyada':'\uD83C\uDFC6'};
 
     var html = '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>#</th><th>Ism</th><th>Sinf</th><th>Testlar</th>';
-    html += '<th>\uD83D\uDCBB Inf</th><th>\uD83D\uDCD0 Mat</th><th>\uD83D\uDD2C Fiz</th><th>\uD83E\uDDEA Kim</th>';
+    html += '<th>\uD83D\uDCBB Inf</th><th>\uD83C\uDFC6 Olimp</th><th>\uD83D\uDCD0 Mat</th><th>\uD83D\uDD2C Fiz</th><th>\uD83E\uDDEA Kim</th>';
     if (testSinfVal) html += '<th>' + testSinfVal + '-sinf</th>';
     if (testVal) html += '<th>' + testVal + '-NI</th>';
     html += '<th>Natija</th><th>Baho</th></tr></thead><tbody>';
@@ -743,6 +746,7 @@ async function loadLeaderboard() {
       var gradeColor = getGradeColor(grade);
 
       var infC = u.subjects && u.subjects.informatika ? u.subjects.informatika.count : 0;
+      var olimpC = u.subjects && u.subjects['informatika-olimpiyada'] ? u.subjects['informatika-olimpiyada'].count : 0;
       var matC = u.subjects && u.subjects.matematika ? u.subjects.matematika.count : 0;
       var fizC = u.subjects && u.subjects.fizika ? u.subjects.fizika.count : 0;
       var kimC = u.subjects && u.subjects.kimyo ? u.subjects.kimyo.count : 0;
@@ -753,6 +757,7 @@ async function loadLeaderboard() {
       html += '<td><span style="font-weight:700;color:var(--primary)">' + (u.grade || '\u2014') + '</span></td>';
       html += '<td><strong>' + u.totalTests + '</strong></td>';
       html += '<td>' + (infC > 0 ? infC : '\u2014') + '</td>';
+      html += '<td>' + (olimpC > 0 ? olimpC : '\u2014') + '</td>';
       html += '<td>' + (matC > 0 ? matC : '\u2014') + '</td>';
       html += '<td>' + (fizC > 0 ? fizC : '\u2014') + '</td>';
       html += '<td>' + (kimC > 0 ? kimC : '\u2014') + '</td>';
@@ -876,9 +881,11 @@ function buildSinfGrid() {
   var grid = document.getElementById('sinfGrid');
   grid.innerHTML = '';
   Object.keys(DB).forEach(function (key) {
+    var isOlimpiyada = key.indexOf('olimpiyada') !== -1;
+    var num = key.replace('-sinf', '').replace(' olimpiyada', '');
     var div = document.createElement('div');
     div.className = 'sinf-card';
-    div.innerHTML = '<div class="sinf-num">' + key.replace('-sinf', '') + '</div><div class="sinf-lbl">sinf</div>';
+    div.innerHTML = '<div class="sinf-num">' + num + '</div><div class="sinf-lbl">' + (isOlimpiyada ? 'sinf olimpiyada' : 'sinf') + '</div>';
     div.onclick = function () { selectSinf(key); };
     grid.appendChild(div);
   });
