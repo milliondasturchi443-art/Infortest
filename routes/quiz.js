@@ -4,6 +4,7 @@ const DB_INFO = require('../data/questions');
 const DB_MATH = require('../data/matematika');
 const DB_PHYS = require('../data/fizika');
 const DB_CHEM = require('../data/kimyo');
+const DB_INFORMATIKA_OLIMP = require('../data/informatika');
 const { checkAchievements } = require('./auth');
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const SUBJECTS = {
   matematika: DB_MATH,
   fizika: DB_PHYS,
   kimyo: DB_CHEM,
+  'informatika-olimpiyada': DB_INFORMATIKA_OLIMP,
 };
 
 function countTests(db) {
@@ -185,7 +187,11 @@ router.get('/results/:userId', async (req, res) => {
 
 router.get('/leaderboard', async (req, res) => {
   try {
-    const users = await User.find({ totalTests: { $gt: 0 } })
+    const filter = req.query.filter || 'all'; // 'all', 'olimpiyada', или имя предмета
+    
+    let query = { totalTests: { $gt: 0 } };
+    
+    const users = await User.find(query)
       .select('name school region grade totalTests totalCorrect totalQuestions results xp level streak');
 
     const sorted = users
@@ -196,16 +202,31 @@ router.get('/leaderboard', async (req, res) => {
         const testStats = {};
         let totalSum = 0;
         let totalCount = 0;
+        let isOlimpiyada = false;
 
         if (u.results && u.results.size > 0) {
           u.results.forEach((pct, key) => {
-            totalSum += pct;
-            totalCount++;
             const parts = key.split('_');
             const subj = parts[0] || 'informatika';
             const sinf = parts[1] || '';
             const sinfNum = sinf.replace(/\D/g, '');
             const testIdx = parts[2] != null ? parseInt(parts[2], 10) : -1;
+
+            // Фильтр по олимпиаде
+            if (filter === 'olimpiyada') {
+              if (key.includes('olimpiyada')) {
+                totalSum += pct;
+                totalCount++;
+                isOlimpiyada = true;
+              } else {
+                return; // skip non-olimpiyada results
+              }
+            } else if (filter !== 'all' && !key.startsWith(filter)) {
+              return; // skip results not matching filter subject
+            } else {
+              totalSum += pct;
+              totalCount++;
+            }
 
             if (!subjectStats[subj]) subjectStats[subj] = { count: 0, sum: 0 };
             subjectStats[subj].count++;
@@ -224,6 +245,11 @@ router.get('/leaderboard', async (req, res) => {
               testStats[tKey].sum += pct;
             }
           });
+        }
+
+        // If filter is olimpiyada and user has no olimpiyada results, skip them
+        if (filter === 'olimpiyada' && !isOlimpiyada) {
+          return null;
         }
 
         const avgPct = totalCount > 0 ? Math.round(totalSum / totalCount) : 0;
@@ -260,6 +286,7 @@ router.get('/leaderboard', async (req, res) => {
           })(),
         };
       })
+      .filter(u => u !== null) // Remove null entries from olimpiyada filter
       .sort((a, b) => b.avgPct - a.avgPct)
       .slice(0, 100);
 
